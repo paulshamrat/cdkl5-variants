@@ -96,12 +96,21 @@ cdkl5-variants/
 - `250315_colabfold/`: Structure prediction scripts and batch jobs (see shell scripts and FASTA files).
 - Additional notebooks/scripts for modeling, docking, ML integration, and downstream analysis.
 
+
 ## Data
 
-- Main variant data: `250519_energy/00_data/01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af_noddg.xlsx`
-- Folding ΔΔG dataset: `250519_energy/00_data/01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af.xlsx`
-- Binding ΔΔG dataset: `250519_energy/04_binding/binding_ddg_results.xlsx` (or similar, see 04_binding/ for details)
-- Prediction results and intermediate files in `250519_energy/` and subfolders.
+- **Main variant data:**  
+  `250519_energy/00_data/01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af_noddg.xlsx`
+- **Folding ΔΔG dataset:**  
+  `250519_energy/00_data/01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af.xlsx`
+- **Binding ΔΔG datasets:**  
+  - `250519_energy/04_binding/clinvar_1kgp_hector_gaf_final_binding.xlsx`  
+  - `250519_energy/04_binding/clinvar_1kgp_hector_gaf_final_binding_znf219_111_only.xlsx`  
+  - Method-specific subfolders:  
+    `01_saambeseq/`, `02_saambe3d/`, `03_foldx/`, `04_mutabind2/`, `05_mcsmppi/`, `06_beatmusic/`, `07_ddmutppi/`, `08_bindprofx/`, `10_isee/`  
+  - Additional results and analysis in `analysis/` and `outputs/` subfolders.
+- **Prediction results and intermediate files:**  
+  Located throughout `250519_energy/` and its subfolders.
 
 ## Citation
 
