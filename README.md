@@ -1,29 +1,16 @@
 
-# CDKL5 Variants Analysis
+# CDKL5 Variants Analysis Workflow
 
-This repository provides an end-to-end workflow for the analysis of CDKL5 gene variants, including variant annotation, stability prediction, CDKL5 and it's substrate structural modeling, and reclassification. The workflow integrates state-of-the-art bioinformatics, machine learning, and deep learning tools for comprehensive variant effect assessment, substrate interaction modeling, and protein-protein docking.
+This repository provides the workflow for the analysis of CDKL5 gene variants, including variant annotation, stability prediction, CDKL5 and it's substrate structural modeling, and reclassification of variants based on $\Delta\Delta G_{\text{Folding}}$ and $\Delta\Delta G_{\text{Binding}}$.
 
-## Features
+## Methods:
 
-- **Variant Annotation & Classification:**  
-  - Integrates ClinVar, gnomAD, and other population/clinical databases.
-  - Supports germline classification, reclassification, and value count summaries.
-
-- **Stability Prediction:**  
-  - Sequence-based and structure-based ΔΔG (ddG) predictions using multiple methods (SAAFEC-SEQ, I-Mutant, INPS, DDGun, mCSM, DDMut, DynaMut, DDGEmb, etc.).
-  - Compatible with deep learning-based stability predictors (e.g., DDGEmb, AlphaFold2-based, and future models).
-  - Automated merging and comparison of results across methods.
-  - Publication-ready violin plots and statistical summaries.
-
-- **Structural Modeling:**  
-  - Substrate and variant structure prediction using ColabFold (AlphaFold2, deep learning-based modeling).
-  - Protein-protein docking with HADDOCK3 (physics-based docking tool).
-  - Analysis of interaction interfaces and energetic changes.
-
-- **Visualization & Reporting:**  
-  - Multi-panel, customizable plots (PDF export, font/legend control).
-  - Jupyter notebooks for reproducible analysis and figure generation.
-  - Data cleaning, inspection, and summary tables.
+1. **Variant Curation:** CDKL5 variant curation from ClinVar, gnomAD and Literatures.
+2. **$\Delta\Delta G_{\text{Folding}}$:** Sequence-based and structure-based $\Delta\Delta G_{\text{Folding}}$ predictions using multiple methods (SAAFEC-SEQ, I-Mutant2.0, INPS, DDGun, mCSM, DDMut, DDGEmb).
+3. **Protein-Protein Complex:** Colabfold: CDKL5-Substrate complex modeling using ColabFold.
+4. **Protein-Protein Docking:** HADDOCK3: CDKL5-Substrate docking using HADDOCK3.
+5. **$\Delta\Delta G_{\text{Binding}}$:**  
+6. Structure-based $\Delta\Delta G_{\text{Binding}}$ analysis using follwoing tools: DDMutPPI, iSee, mCSM-PPI and SAAMBE-3D.
 
 ## Directory Structure
 
