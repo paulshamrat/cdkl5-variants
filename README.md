@@ -1,5 +1,5 @@
 
-# Comprehensive CDKL5 Deficiency Disorder Variant Analysis
+# CDKL5 Variants Analysis
 
 This repository provides an end-to-end workflow for the analysis of CDKL5 gene variants, including variant annotation, stability prediction, CDKL5 and it's substrate structural modeling, and reclassification. The workflow integrates state-of-the-art bioinformatics, machine learning, and deep learning tools for comprehensive variant effect assessment, substrate interaction modeling, and protein-protein docking.
 
