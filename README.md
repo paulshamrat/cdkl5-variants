@@ -9,8 +9,7 @@ This repository provides the workflow for the analysis of CDKL5 gene variants, i
 2. **$\Delta\Delta G_{\text{Folding}}$:** Sequence-based and structure-based $\Delta\Delta G_{\text{Folding}}$ predictions using multiple methods (SAAFEC-SEQ, I-Mutant2.0, INPS, DDGun, mCSM, DDMut, DDGEmb).
 3. **Protein-Protein Complex:** Colabfold: CDKL5-Substrate complex modeling using ColabFold.
 4. **Protein-Protein Docking:** HADDOCK3: CDKL5-Substrate docking using HADDOCK3.
-5. **$\Delta\Delta G_{\text{Binding}}$:**  
-6. Structure-based $\Delta\Delta G_{\text{Binding}}$ analysis using follwoing tools: DDMutPPI, iSee, mCSM-PPI and SAAMBE-3D.
+5. **$\Delta\Delta G_{\text{Binding}}$:** Structure-based $\Delta\Delta G_{\text{Binding}}$ analysis using follwoing tools: DDMutPPI, iSee, mCSM-PPI and SAAMBE-3D.
 
 ## Directory Structure
 
