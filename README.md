@@ -8,25 +8,22 @@ This repository provides an end-to-end workflow for the analysis of CDKL5 gene v
 - **Variant Annotation & Classification:**  
   - Integrates ClinVar, gnomAD, and other population/clinical databases.
   - Supports germline classification, reclassification, and value count summaries.
-  - Ready for integration with AI/ML-based variant effect predictors.
 
 - **Stability Prediction:**  
   - Sequence-based and structure-based ΔΔG (ddG) predictions using multiple methods (SAAFEC-SEQ, I-Mutant, INPS, DDGun, mCSM, DDMut, DynaMut, DDGEmb, etc.).
-  - Compatible with AI/ML and deep learning-based stability predictors (e.g., DDGEmb, AlphaFold2-based, and future models).
+  - Compatible with deep learning-based stability predictors (e.g., DDGEmb, AlphaFold2-based, and future models).
   - Automated merging and comparison of results across methods.
   - Publication-ready violin plots and statistical summaries.
 
-- **Structural Modeling & AI Integration:**  
+- **Structural Modeling:**  
   - Substrate and variant structure prediction using ColabFold (AlphaFold2, deep learning-based modeling).
   - Protein-protein docking with HADDOCK3 (physics-based docking tool).
   - Analysis of interaction interfaces and energetic changes.
-  - Designed for easy extension with generative AI, ML-based scoring, and structure prediction tools.
 
 - **Visualization & Reporting:**  
   - Multi-panel, customizable plots (PDF export, font/legend control).
   - Jupyter notebooks for reproducible analysis and figure generation.
   - Data cleaning, inspection, and summary tables.
-  - Ready for integration with AI/ML-based visualization and analytics.
 
 ## Directory Structure
 
@@ -60,7 +57,7 @@ cdkl5-variants/
 
 2. **Install dependencies:**  
    - Python 3.8+  
-   - pandas, matplotlib, seaborn, openpyxl, scikit-learn, tensorflow/torch (for AI/ML), etc.  
+   - pandas, matplotlib, seaborn, openpyxl, scikit-learn, tensorflow/torch, etc.  
    - (See notebooks for full requirements.)
 
 3. **Run the analysis:**  
@@ -76,12 +73,12 @@ cdkl5-variants/
      - `250315_colabfold/`: Structure prediction scripts and batch jobs (see shell scripts and FASTA files).
      - Additional notebooks/scripts for focused tasks (e.g., plotting, data exploration, ML integration).
    - Follow the notebook cells for data loading, cleaning, prediction, and visualization.
-   - Integrate or extend with your own AI/ML models as needed.
+
 
 4. **Modeling & Docking:**  
    - Use ColabFold for structure prediction (deep learning-based, see provided scripts in `250315_colabfold/`).
    - Run HADDOCK3 for docking (physics-based docking tool; see `250519_energy/03_haddock/`).
-   - Ready for integration with generative AI and ML-based structure/docking tools.
+
 
 ## Notebooks
 
@@ -113,9 +110,11 @@ cdkl5-variants/
   Located throughout `250519_energy/` and its subfolders.
 
 ## Citation
+If this repository is helpful, please cite:
 
-If you use this workflow or code, please cite the relevant tools and this repository.
-
+**Paul, S. K.; Panday, S. K.; Boccuto, L.; Alexov, E.**  
+*CDKL5 Deficiency Disorder: Revealing the Molecular Mechanism of Pathogenic Variants.*  
+Preprints **2025**, *2025081241*. [https://doi.org/10.20944/preprints202508.1241.v1](https://doi.org/10.20944/preprints202508.1241.v1)
 ---
 
 **Contact:**  
