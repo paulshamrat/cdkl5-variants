@@ -100,7 +100,8 @@ cdkl5-variants/
 
 If this repository is helpful, please cite:  
 
-Paul, S. K.; Panday, S. K.; Boccuto, L.; Alexov, E. CDKL5 Deficiency Disorder: Revealing the Molecular Mechanism of Pathogenic Variants.* Preprints 2025, 2025081241. [https://doi.org/10.20944/preprints202508.1241.v1](https://doi.org/10.20944/preprints202508.1241.v1)
+> Paul, S. K.; Panday, S. K.; Boccuto, L.; Alexov, E. *CDKL5 Deficiency Disorder: Revealing the Molecular Mechanism of Pathogenic Variants*. Preprints 2025, 2025081241.  
+> [https://doi.org/10.20944/preprints202508.1241.v1](https://www.preprints.org/manuscript/202508.1241/v1)
 ---
 
 **Contact:**  
