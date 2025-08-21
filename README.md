@@ -10,6 +10,8 @@ This repository provides the workflow for the analysis of CDKL5 gene variants, i
 3. **Protein-Protein Complex:** Colabfold: CDKL5-Substrate complex modeling using ColabFold.
 4. **Protein-Protein Docking:** HADDOCK3: CDKL5-Substrate docking using HADDOCK3.
 5. **$\Delta\Delta G_{\text{Binding}}$:** Structure-based $\Delta\Delta G_{\text{Binding}}$ analysis using follwoing tools: DDMutPPI, iSee, mCSM-PPI and SAAMBE-3D.
+6. **Pathogenicity prediction:** CDKL5 variants pathogenicity prediction using pathogenicity predctors (PolyPhen-2, MutPred2, ESM-1v, and AlphaMissense).
+7. **Variant Reclassification:** Reclassificaiton of CDKL5 variants based on DDG_folding, Binding and Pathogenicity.
 
 
 ## Citation
