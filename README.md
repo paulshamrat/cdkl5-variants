@@ -1,7 +1,7 @@
 
 # CDKL5 Variants Analysis Workflow
 
-![CDKL5 graphical abstract](cdkl5-graphical-abstract-250827.svg)
+![CDKL5 graphical abstract](cdkl5-graphical-abstract-250827.jpg)
 
 This repository provides the workflow for the analysis of CDKL5 gene variants, including variant annotation, stability prediction, CDKL5 and it's substrate structural modeling, and reclassification of variants based on $\Delta\Delta G_{\text{Folding}}$ and $\Delta\Delta G_{\text{Binding}}$.
 
