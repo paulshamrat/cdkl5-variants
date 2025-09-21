@@ -1,5 +1,5 @@
 
-# CDKL5 Variants Analysis Workflow
+# CDKL5 Deficiency Disorder: Revealing the Molecular Mechanism of Pathogenic Variants
 
 ![CDKL5 graphical abstract](cdkl5-graphical-abstract-250827.jpg)
 
@@ -16,12 +16,12 @@ This repository provides the workflow for the analysis of CDKL5 gene variants, i
 7. **Variant Reclassification:** Reclassificaiton of CDKL5 variants based on DDG_folding, Binding and Pathogenicity.
 
 
-## Citation
+## Publication
 
-If this repository is helpful, please cite:  
+This work is now published:  
 
 > Paul, S. K.; Panday, S. K.; Boccuto, L.; Alexov, E. *CDKL5 Deficiency Disorder: Revealing the Molecular Mechanism of Pathogenic Variants*. Preprints 2025, 2025081241.  
-> [https://doi.org/10.20944/preprints202508.1241.v1](https://www.preprints.org/manuscript/202508.1241/v1)
+> [https://pmc.ncbi.nlm.nih.gov/articles/PMC12429097/](https://pmc.ncbi.nlm.nih.gov/articles/PMC12429097/)
 ---
 
 **Contact:**  
