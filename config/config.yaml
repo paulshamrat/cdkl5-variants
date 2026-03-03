@@ -1,0 +1,23 @@
+project:
+  name: cdkl5-variants
+  uniprot_id: O76039
+  residue_range: [1, 302]
+
+paths:
+  data_dir: "00_data"
+  folding_dir: "02_folding"
+  binding_dir: "04_binding"
+  pathogenicity_dir: "05_pathogenicity"
+  output_dir: "04.5_reclassification"
+  saambe_outputs: "04_binding/outputs/saambe_3d"
+  polyphen2_results: "05_pathogenicity/01_polyphen2"
+
+files:
+  raw_clinvar: "clinvar_result.txt"
+  processed_variants: "01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af.xlsx"
+  binding_variants: "clinvar_1kgp_hector_gaf_final.xlsx"
+  reclassified_output: "reclassified_variants.xlsx"
+
+predictors:
+  methods: ["saambe3d", "mupit", "duet", "sdm", "mpro"]
+  colors: ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#B07AA1"]
