@@ -13,7 +13,7 @@ import requests
 SCRIPT_PATH = Path(__file__).resolve()
 
 
-DEFAULT_DRIVE_ROOT = "/content/drive/MyDrive/tgvr_colab"
+DEFAULT_WORKSPACE_ROOT = "/content/tgvr_colab"
 ENSEMBL_REST_BASE = "https://rest.ensembl.org"
 CLINVAR_VARIANT_SUMMARY_URL = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
 AA_3_TO_1 = {
@@ -41,63 +41,63 @@ AA_3_TO_1 = {
 }
 
 
-def build_drive_workspace(drive_root):
-    drive_root = Path(drive_root).expanduser()
+def build_workspace(workspace_root):
+    workspace_root = Path(workspace_root).expanduser()
     paths = {
-        "root": drive_root,
-        "data": drive_root / "data",
-        "outputs": drive_root / "outputs",
-        "logs": drive_root / "logs",
-        "cache": drive_root / "cache",
-        "scripts": drive_root / "scripts",
+        "root": workspace_root,
+        "data": workspace_root / "data",
+        "outputs": workspace_root / "outputs",
+        "logs": workspace_root / "logs",
+        "cache": workspace_root / "cache",
+        "scripts": workspace_root / "scripts",
     }
     for path in paths.values():
         path.mkdir(parents=True, exist_ok=True)
     return paths
 
 
-def gene_data_root(drive_root, gene_name):
+def gene_data_root(workspace_root, gene_name):
     return (
-        Path(drive_root).expanduser()
+        Path(workspace_root).expanduser()
         / "data"
         / gene_name.lower()
         / "01_variant_curation"
     )
 
 
-def gene_output_root(drive_root, gene_name):
+def gene_output_root(workspace_root, gene_name):
     return (
-        Path(drive_root).expanduser()
+        Path(workspace_root).expanduser()
         / "outputs"
         / gene_name.lower()
         / "01_variant_curation"
     )
 
 
-def colab_stage_output_dir(drive_root, gene_name):
-    return gene_output_root(drive_root, gene_name) / "1kgp"
+def colab_stage_output_dir(workspace_root, gene_name):
+    return gene_output_root(workspace_root, gene_name) / "1kgp"
 
 
-def clinvar_output_dir(drive_root, gene_name):
-    return gene_output_root(drive_root, gene_name) / "clinvar"
+def clinvar_output_dir(workspace_root, gene_name):
+    return gene_output_root(workspace_root, gene_name) / "clinvar"
 
 
-def manual_data_dir(drive_root, gene_name):
-    return gene_data_root(drive_root, gene_name) / "manual"
+def manual_data_dir(workspace_root, gene_name):
+    return gene_data_root(workspace_root, gene_name) / "manual"
 
 
-def clinvar_data_dir(drive_root, gene_name):
-    return gene_data_root(drive_root, gene_name) / "clinvar"
+def clinvar_data_dir(workspace_root, gene_name):
+    return gene_data_root(workspace_root, gene_name) / "clinvar"
 
 
-def ensure_gene_drive_layout(drive_root, gene_name):
+def ensure_gene_workspace_layout(workspace_root, gene_name):
     gene_upper = gene_name.upper()
     paths = {
-        "data_root": gene_data_root(drive_root, gene_upper),
-        "manual_dir": manual_data_dir(drive_root, gene_upper),
-        "clinvar_data_dir": clinvar_data_dir(drive_root, gene_upper),
-        "clinvar_output_dir": clinvar_output_dir(drive_root, gene_upper),
-        "kgp_output_dir": colab_stage_output_dir(drive_root, gene_upper),
+        "data_root": gene_data_root(workspace_root, gene_upper),
+        "manual_dir": manual_data_dir(workspace_root, gene_upper),
+        "clinvar_data_dir": clinvar_data_dir(workspace_root, gene_upper),
+        "clinvar_output_dir": clinvar_output_dir(workspace_root, gene_upper),
+        "kgp_output_dir": colab_stage_output_dir(workspace_root, gene_upper),
     }
     for path in paths.values():
         path.mkdir(parents=True, exist_ok=True)
@@ -113,7 +113,7 @@ def download_file(url, destination):
     return destination
 
 
-def install_manual_file(gene_name, manual_source, drive_root):
+def install_manual_file(gene_name, manual_source, workspace_root):
     source_path = Path(manual_source).expanduser().resolve()
     if not source_path.exists():
         raise FileNotFoundError(f"Manual curated file not found: {source_path}")
@@ -122,7 +122,7 @@ def install_manual_file(gene_name, manual_source, drive_root):
     if suffix not in {".csv", ".xlsx"}:
         raise ValueError("Manual curated file must be .csv or .xlsx")
 
-    target_dir = manual_data_dir(drive_root, gene_name)
+    target_dir = manual_data_dir(workspace_root, gene_name)
     target_dir.mkdir(parents=True, exist_ok=True)
     target_name = "curated_variants.csv" if suffix == ".csv" else "curated_variants.xlsx"
     target_path = target_dir / target_name
@@ -130,14 +130,14 @@ def install_manual_file(gene_name, manual_source, drive_root):
     return target_path
 
 
-def ensure_clinvar_bulk(gene_name, drive_root, requested_path=None, logger=None):
+def ensure_clinvar_bulk(gene_name, workspace_root, requested_path=None, logger=None):
     if requested_path:
         path = Path(requested_path).expanduser().resolve()
         if not path.exists():
             raise FileNotFoundError(f"Required ClinVar bulk file not found: {path}")
         return path
 
-    bulk_path = clinvar_data_dir(drive_root, gene_name) / "clinvar_variant_summary.txt.gz"
+    bulk_path = clinvar_data_dir(workspace_root, gene_name) / "clinvar_variant_summary.txt.gz"
     if bulk_path.exists():
         return bulk_path
 
@@ -191,10 +191,10 @@ def extract_1kgp_af(vep_entry, alt_allele):
     return None
 
 
-def build_colab_1kgp_workbook(gene_name, drive_root, logger=None):
+def build_colab_1kgp_workbook(gene_name, workspace_root, logger=None):
     gene_upper = gene_name.upper()
-    ensure_gene_drive_layout(drive_root, gene_upper)
-    stage_dir = colab_stage_output_dir(drive_root, gene_upper)
+    ensure_gene_workspace_layout(workspace_root, gene_upper)
+    stage_dir = colab_stage_output_dir(workspace_root, gene_upper)
     stage_dir.mkdir(parents=True, exist_ok=True)
 
     session = requests.Session()
@@ -364,10 +364,10 @@ def build_colab_1kgp_workbook(gene_name, drive_root, logger=None):
     return summary
 
 
-def build_colab_clinvar_outputs(gene_name, drive_root, clinvar_bulk_path, logger=None):
+def build_colab_clinvar_outputs(gene_name, workspace_root, clinvar_bulk_path, logger=None):
     gene_upper = gene_name.upper()
-    ensure_gene_drive_layout(drive_root, gene_upper)
-    output_dir = clinvar_output_dir(drive_root, gene_upper)
+    ensure_gene_workspace_layout(workspace_root, gene_upper)
+    output_dir = clinvar_output_dir(workspace_root, gene_upper)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if logger:
@@ -433,59 +433,64 @@ def build_colab_clinvar_outputs(gene_name, drive_root, clinvar_bulk_path, logger
     return summary
 
 
-def ensure_drive_is_mounted(drive_root):
-    drive_root = Path(drive_root).expanduser()
-    mydrive = drive_root.parent
-    if not mydrive.exists():
+def validate_workspace_root(workspace_root):
+    workspace_root = Path(workspace_root).expanduser()
+    if str(workspace_root).startswith("/content/drive/") and not Path("/content/drive/MyDrive").exists():
         raise SystemExit(
             "Google Drive does not appear to be mounted. In a Colab notebook cell, run:\n"
             "from google.colab import drive\n"
             "drive.mount('/content/drive')"
         )
-    return drive_root
+    return workspace_root
 
 
-def copy_colab_files(drive_root):
-    drive_root = ensure_drive_is_mounted(drive_root)
-    build_drive_workspace(drive_root)
+def copy_colab_files(workspace_root):
+    workspace_root = validate_workspace_root(workspace_root)
+    build_workspace(workspace_root)
 
-    destination = drive_root / "scripts" / "tgvr_colab.py"
+    destination = workspace_root / "scripts" / "tgvr_colab.py"
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(SCRIPT_PATH, destination)
 
     return {
-        "root": str(drive_root),
-        "scripts_dir": str((drive_root / "scripts").resolve()),
+        "root": str(workspace_root),
+        "scripts_dir": str((workspace_root / "scripts").resolve()),
         "runner": str(destination.resolve()),
     }
 
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description="Drive-backed Colab helper for TGVR."
+        description="Colab-terminal helper for TGVR using a dedicated workspace."
     )
     parser.add_argument(
+        "--workspace-root",
         "--drive-root",
-        default=DEFAULT_DRIVE_ROOT,
-        help=f"Drive-backed TGVR workspace root (default: {DEFAULT_DRIVE_ROOT})",
+        dest="workspace_root",
+        default=DEFAULT_WORKSPACE_ROOT,
+        help=(
+            "TGVR workspace root. Use /content/tgvr_colab for fast ephemeral runs or "
+            "/content/drive/MyDrive/tgvr_colab for persistent Google Drive runs "
+            f"(default: {DEFAULT_WORKSPACE_ROOT})"
+        ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser(
         "init",
-        help="Create the Drive workspace and copy the Colab TGVR scripts into it.",
+        help="Create the workspace and copy the Colab TGVR script into it.",
     )
 
     manual_parser = subparsers.add_parser(
         "install-manual",
-        help="Copy a manual curated variant file into the Drive-backed TGVR workspace.",
+        help="Copy a manual curated variant file into the TGVR workspace.",
     )
     manual_parser.add_argument("gene", help="Gene symbol, for example CDKL5")
     manual_parser.add_argument("manual_file", help="Path to a CSV or XLSX manual curated file")
 
     clinvar_parser = subparsers.add_parser(
         "run-clinvar",
-        help="Build Drive-backed ClinVar outputs for a gene.",
+        help="Build ClinVar outputs for a gene inside the TGVR workspace.",
     )
     clinvar_parser.add_argument("gene", help="Gene symbol, for example CDKL5")
     clinvar_parser.add_argument(
@@ -496,7 +501,7 @@ def build_parser():
 
     run_parser = subparsers.add_parser(
         "run-1kgp",
-        help="Build a Colab-safe Drive-backed 1KGP workbook without Palmetto.",
+        help="Build a Colab-safe 1KGP workbook without Palmetto.",
     )
     run_parser.add_argument("gene", help="Gene symbol, for example CDKL5")
 
@@ -511,40 +516,42 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
 
-    drive_root = ensure_drive_is_mounted(args.drive_root)
+    workspace_root = validate_workspace_root(args.workspace_root)
 
     if args.command == "init":
-        copied = copy_colab_files(drive_root)
-        print("Created Drive-backed TGVR workspace and copied Colab helpers:")
+        copied = copy_colab_files(workspace_root)
+        print("Created TGVR workspace and copied the Colab helper:")
         print(json.dumps(copied, indent=2))
-        print("Next command:")
-        print(f"  cd {drive_root}")
-        print(f"  python3 scripts/tgvr_colab.py --drive-root {drive_root} install-manual CDKL5 /path/to/curated_variants.csv")
-        print(f"  python3 scripts/tgvr_colab.py --drive-root {drive_root} run-clinvar CDKL5")
-        print(f"  python3 scripts/tgvr_colab.py --drive-root {drive_root} run-1kgp CDKL5")
+        print("Suggested flow:")
+        print(f"  cd {workspace_root}")
+        print("  mkdir -p manual_input")
+        print("  # put your manual curated file under manual_input/ if you have one")
+        print(f"  python3 scripts/tgvr_colab.py --workspace-root {workspace_root} install-manual CDKL5 {workspace_root}/manual_input/curated_variants.csv")
+        print(f"  python3 scripts/tgvr_colab.py --workspace-root {workspace_root} run-clinvar CDKL5")
+        print(f"  python3 scripts/tgvr_colab.py --workspace-root {workspace_root} run-1kgp CDKL5")
         return 0
 
     if args.command == "install-manual":
-        ensure_gene_drive_layout(drive_root, args.gene)
-        installed_path = install_manual_file(args.gene, args.manual_file, drive_root)
+        ensure_gene_workspace_layout(workspace_root, args.gene)
+        installed_path = install_manual_file(args.gene, args.manual_file, workspace_root)
         print("Installed manual curated file:")
         print(installed_path.resolve())
         return 0
 
     if args.command == "run-clinvar":
-        ensure_gene_drive_layout(drive_root, args.gene)
-        clinvar_bulk = ensure_clinvar_bulk(args.gene, drive_root, args.clinvar_bulk, logger=log)
-        summary = build_colab_clinvar_outputs(args.gene, drive_root, clinvar_bulk, logger=log)
+        ensure_gene_workspace_layout(workspace_root, args.gene)
+        clinvar_bulk = ensure_clinvar_bulk(args.gene, workspace_root, args.clinvar_bulk, logger=log)
+        summary = build_colab_clinvar_outputs(args.gene, workspace_root, clinvar_bulk, logger=log)
         print("Done.")
         print(json.dumps(summary, indent=2))
         print("Final deduplicated rows:", Path(summary["files"]["final_rows"]).resolve())
-        print("Summary:", (clinvar_output_dir(drive_root, args.gene) / "summary.json").resolve())
+        print("Summary:", (clinvar_output_dir(workspace_root, args.gene) / "summary.json").resolve())
         return 0
 
     if args.command == "run-1kgp":
-        build_drive_workspace(drive_root)
-        ensure_gene_drive_layout(drive_root, args.gene)
-        summary = build_colab_1kgp_workbook(args.gene, drive_root, logger=log)
+        build_workspace(workspace_root)
+        ensure_gene_workspace_layout(workspace_root, args.gene)
+        summary = build_colab_1kgp_workbook(args.gene, workspace_root, logger=log)
         print("Done.")
         print(json.dumps(summary, indent=2))
         print("Workbook:", Path(summary["files"]["xlsx"]).resolve())
