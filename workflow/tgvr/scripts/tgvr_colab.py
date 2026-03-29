@@ -2,6 +2,7 @@ import argparse
 import json
 import re
 import shutil
+import subprocess
 import sys
 import urllib.request
 from pathlib import Path
@@ -16,6 +17,15 @@ SCRIPT_PATH = Path(__file__).resolve()
 DEFAULT_WORKSPACE_ROOT = "/content/tgvr_colab"
 ENSEMBL_REST_BASE = "https://rest.ensembl.org"
 CLINVAR_VARIANT_SUMMARY_URL = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
+DEFAULT_LEGACY_1KGP_COUNTS = {
+    "CDKL5": {
+        "gene_rows": 4480,
+        "missense_only": 19,
+        "missense_gene_only": 13,
+        "missense_gene_unique": 12,
+        "missense_gene_unique_prot_chan": 12,
+    }
+}
 AA_3_TO_1 = {
     "Ala": "A",
     "Arg": "R",
@@ -111,6 +121,108 @@ def download_file(url, destination):
     with urllib.request.urlopen(request) as response, open(destination, "wb") as handle:
         shutil.copyfileobj(response, handle)
     return destination
+
+
+def run_checked(command):
+    result = subprocess.run(
+        command,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    return result.stdout
+
+
+def detect_vcf_contig_prefix(vcf_path):
+    header = run_checked(["bcftools", "view", "-h", str(vcf_path)])
+    if "##contig=<ID=chrX>" in header:
+        return "chr"
+    if "##contig=<ID=X>" in header:
+        return ""
+    if "##contig=<ID=chr1>" in header:
+        return "chr"
+    return ""
+
+
+def workbook_output_paths(stage_dir, gene_upper, suffix=""):
+    stem = f"1kgp_{gene_upper.lower()}_grch38"
+    if suffix:
+        stem = f"{stem}_{suffix}"
+    return {
+        "xlsx": stage_dir / f"{stem}.xlsx",
+        "summary_json": stage_dir / f"{stem}.summary.json",
+    }
+
+
+def write_1kgp_workbook(
+    gene_upper,
+    lookup_payload,
+    gene_rows_df,
+    missense_only_df,
+    stage_dir,
+    suffix="",
+):
+    columns = [
+        "CHROM",
+        "POS",
+        "REF",
+        "ALT",
+        "RefGenome",
+        "AF",
+        "Gene",
+        "Consequence",
+        "HGVSc",
+        "HGVSp",
+        "dbSNP ID",
+    ]
+    if missense_only_df.empty:
+        missense_only_df = pd.DataFrame(columns=columns)
+
+    missense_gene_only_df = missense_only_df[
+        missense_only_df["Gene"].astype(str).str.upper() == gene_upper
+    ].copy()
+    missense_unique_df = missense_gene_only_df.drop_duplicates().copy()
+    missense_unique_prot_df = missense_unique_df.copy()
+    missense_unique_prot_df["Protein change 3L"] = missense_unique_prot_df["HGVSp"].astype(str).str.extract(
+        r":p\.(.+)"
+    )
+    missense_unique_prot_df["Protein change"] = missense_unique_prot_df["Protein change 3L"].apply(
+        convert_three_letter_change
+    )
+    missense_unique_prot_df = missense_unique_prot_df[
+        missense_unique_prot_df["Protein change"].notna()
+    ].copy()
+
+    outputs = workbook_output_paths(stage_dir, gene_upper, suffix=suffix)
+    with pd.ExcelWriter(outputs["xlsx"]) as writer:
+        gene_rows_df.to_excel(writer, sheet_name="Sheet1", index=False)
+        missense_only_df.to_excel(writer, sheet_name="missense_only", index=False)
+        missense_gene_only_df.to_excel(writer, sheet_name="missense_cdkl5_only", index=False)
+        missense_unique_df.to_excel(writer, sheet_name="missense_cdkl5_unique", index=False)
+        missense_unique_prot_df.to_excel(
+            writer, sheet_name="missense_cdkl5_unique_prot_chan", index=False
+        )
+
+    summary = {
+        "gene": gene_upper,
+        "assembly": "GRCh38",
+        "ensembl_gene_id": lookup_payload.get("id"),
+        "canonical_transcript": lookup_payload.get("canonical_transcript"),
+        "region": f"{lookup_payload['seq_region_name']}:{lookup_payload['start']}-{lookup_payload['end']}",
+        "counts": {
+            "gene_rows": int(len(gene_rows_df)),
+            "missense_only": int(len(missense_only_df)),
+            "missense_gene_only": int(len(missense_gene_only_df)),
+            "missense_gene_unique": int(len(missense_unique_df)),
+            "missense_gene_unique_prot_chan": int(len(missense_unique_prot_df)),
+        },
+        "files": {
+            "xlsx": str(outputs["xlsx"]),
+            "summary_json": str(outputs["summary_json"]),
+        },
+    }
+    outputs["summary_json"].write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    return summary
 
 
 def install_manual_file(gene_name, manual_source, workspace_root):
@@ -298,70 +410,15 @@ def build_colab_1kgp_workbook(gene_name, workspace_root, logger=None):
             }
         )
 
-    columns = [
-        "CHROM",
-        "POS",
-        "REF",
-        "ALT",
-        "RefGenome",
-        "AF",
-        "Gene",
-        "Consequence",
-        "HGVSc",
-        "HGVSp",
-        "dbSNP ID",
-    ]
     missense_only_df = pd.DataFrame(missense_rows)
-    if missense_only_df.empty:
-        missense_only_df = pd.DataFrame(columns=columns)
-
-    missense_gene_only_df = missense_only_df[
-        missense_only_df["Gene"].astype(str).str.upper() == gene_upper
-    ].copy()
-    missense_unique_df = missense_gene_only_df.drop_duplicates().copy()
-    missense_unique_prot_df = missense_unique_df.copy()
-    missense_unique_prot_df["Protein change 3L"] = missense_unique_prot_df["HGVSp"].astype(str).str.extract(
-        r":p\.(.+)"
+    return write_1kgp_workbook(
+        gene_upper,
+        lookup_payload,
+        gene_rows_df,
+        missense_only_df,
+        stage_dir,
+        suffix="",
     )
-    missense_unique_prot_df["Protein change"] = missense_unique_prot_df["Protein change 3L"].apply(
-        convert_three_letter_change
-    )
-    missense_unique_prot_df = missense_unique_prot_df[
-        missense_unique_prot_df["Protein change"].notna()
-    ].copy()
-
-    workbook_path = stage_dir / f"1kgp_{gene_upper.lower()}_grch38.xlsx"
-    summary_path = stage_dir / f"1kgp_{gene_upper.lower()}_grch38.summary.json"
-
-    with pd.ExcelWriter(workbook_path) as writer:
-        gene_rows_df.to_excel(writer, sheet_name="Sheet1", index=False)
-        missense_only_df.to_excel(writer, sheet_name="missense_only", index=False)
-        missense_gene_only_df.to_excel(writer, sheet_name="missense_cdkl5_only", index=False)
-        missense_unique_df.to_excel(writer, sheet_name="missense_cdkl5_unique", index=False)
-        missense_unique_prot_df.to_excel(
-            writer, sheet_name="missense_cdkl5_unique_prot_chan", index=False
-        )
-
-    summary = {
-        "gene": gene_upper,
-        "assembly": "GRCh38",
-        "ensembl_gene_id": lookup_payload.get("id"),
-        "canonical_transcript": canonical_transcript,
-        "region": f"{chromosome}:{start}-{end}",
-        "counts": {
-            "gene_rows": int(len(gene_rows_df)),
-            "missense_only": int(len(missense_only_df)),
-            "missense_gene_only": int(len(missense_gene_only_df)),
-            "missense_gene_unique": int(len(missense_unique_df)),
-            "missense_gene_unique_prot_chan": int(len(missense_unique_prot_df)),
-        },
-        "files": {
-            "xlsx": str(workbook_path),
-            "summary_json": str(summary_path),
-        },
-    }
-    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    return summary
 
 
 def build_colab_clinvar_outputs(gene_name, workspace_root, clinvar_bulk_path, logger=None):
@@ -431,6 +488,179 @@ def build_colab_clinvar_outputs(gene_name, workspace_root, clinvar_bulk_path, lo
     summary_path = output_dir / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return summary
+
+
+def build_colab_1kgp_workbook_from_vcf(gene_name, workspace_root, vcf_path, logger=None):
+    gene_upper = gene_name.upper()
+    ensure_gene_workspace_layout(workspace_root, gene_upper)
+    stage_dir = colab_stage_output_dir(workspace_root, gene_upper)
+    cache_dir = Path(workspace_root).expanduser() / "cache" / gene_upper.lower() / "1kgp_vcf"
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    vcf_path = Path(vcf_path).expanduser().resolve()
+    if not vcf_path.exists():
+        raise FileNotFoundError(f"Required VCF file not found: {vcf_path}")
+
+    session = requests.Session()
+    session.headers.update({"Content-Type": "application/json", "Accept": "application/json"})
+
+    def log(message):
+        if logger:
+            logger(message)
+
+    def get_json(url):
+        response = session.get(url, timeout=120)
+        response.raise_for_status()
+        return response.json()
+
+    def post_json(url, payload):
+        response = session.post(url, json=payload, timeout=120)
+        response.raise_for_status()
+        return response.json()
+
+    log(f"Looking up {gene_upper} in Ensembl...")
+    lookup_url = f"{ENSEMBL_REST_BASE}/lookup/symbol/homo_sapiens/{gene_upper}?content-type=application/json"
+    lookup_payload = get_json(lookup_url)
+    canonical_transcript = lookup_payload.get("canonical_transcript")
+    contig_prefix = detect_vcf_contig_prefix(vcf_path)
+    region = f"{contig_prefix}{lookup_payload['seq_region_name']}:{lookup_payload['start']}-{lookup_payload['end']}"
+    region_vcf = cache_dir / f"{gene_upper.lower()}.region.vcf.gz"
+
+    log(f"Subsetting {region} from {vcf_path.name}...")
+    subprocess.run(
+        [
+            "bcftools",
+            "view",
+            "-r",
+            region,
+            str(vcf_path),
+            "-Oz",
+            "-o",
+            str(region_vcf),
+        ],
+        check=True,
+    )
+    subprocess.run(["tabix", "-f", "-p", "vcf", str(region_vcf)], check=True)
+
+    raw_lines = run_checked(
+        [
+            "bcftools",
+            "query",
+            "-f",
+            "%CHROM\t%POS\t%REF\t%ALT\t%INFO/AF\t%ID\n",
+            str(region_vcf),
+        ]
+    ).splitlines()
+
+    gene_rows = []
+    rsid_to_rows = {}
+    for line in raw_lines:
+        chrom, pos, ref, alt, af, variant_id = line.split("\t")
+        row = {
+            "CHROM": chrom,
+            "POS": int(pos),
+            "REF": ref,
+            "ALT": alt,
+            "RefGenome": "GRCh38",
+            "AF": None if af == "." else af,
+            "Gene": gene_upper,
+            "Consequence": pd.NA,
+            "HGVSc": pd.NA,
+            "HGVSp": pd.NA,
+            "dbSNP ID": variant_id if variant_id != "." else None,
+        }
+        gene_rows.append(row)
+        if variant_id and variant_id != ".":
+            rsid_to_rows.setdefault(variant_id, []).append(row)
+
+    gene_rows_df = pd.DataFrame(gene_rows)
+    missense_rows = []
+    rsids = sorted(rsid_to_rows.keys())
+    vep_payload = []
+    if rsids:
+        log(f"Annotating {len(rsids)} VCF rsIDs through Ensembl VEP...")
+        for index in range(0, len(rsids), 200):
+            chunk = rsids[index : index + 200]
+            vep_payload.extend(post_json(f"{ENSEMBL_REST_BASE}/vep/human/id?hgvs=1", {"ids": chunk}))
+
+    for entry in vep_payload:
+        rsid = entry.get("input")
+        if not rsid or rsid not in rsid_to_rows:
+            continue
+        transcript = choose_transcript_consequence(
+            entry.get("transcript_consequences", []),
+            gene_upper,
+            canonical_transcript,
+        )
+        if transcript is None:
+            continue
+        if "missense_variant" not in str(transcript.get("consequence_terms", "")):
+            continue
+        for source_row in rsid_to_rows[rsid]:
+            missense_rows.append(
+                {
+                    "CHROM": source_row["CHROM"],
+                    "POS": source_row["POS"],
+                    "REF": source_row["REF"],
+                    "ALT": source_row["ALT"],
+                    "RefGenome": source_row["RefGenome"],
+                    "AF": source_row["AF"],
+                    "Gene": transcript.get("gene_symbol"),
+                    "Consequence": "missense_variant",
+                    "HGVSc": transcript.get("hgvsc"),
+                    "HGVSp": transcript.get("hgvsp"),
+                    "dbSNP ID": rsid,
+                }
+            )
+
+    missense_only_df = pd.DataFrame(missense_rows)
+    summary = write_1kgp_workbook(
+        gene_upper,
+        lookup_payload,
+        gene_rows_df,
+        missense_only_df,
+        stage_dir,
+        suffix="vcf",
+    )
+    summary["source_vcf"] = str(vcf_path)
+    summary["subset_vcf"] = str(region_vcf)
+    Path(summary["files"]["summary_json"]).write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    return summary
+
+
+def compare_1kgp_outputs(gene_name, workspace_root, summary_path=None):
+    gene_upper = gene_name.upper()
+    manual_csv = manual_data_dir(workspace_root, gene_upper) / "curated_variants.csv"
+    manual_xlsx = manual_data_dir(workspace_root, gene_upper) / "curated_variants.xlsx"
+    default_summary = colab_stage_output_dir(workspace_root, gene_upper) / f"1kgp_{gene_upper.lower()}_grch38.summary.json"
+    if summary_path:
+        summary_file = Path(summary_path).expanduser().resolve()
+    else:
+        summary_file = default_summary
+    if not summary_file.exists():
+        raise FileNotFoundError(f"1KGP summary file not found: {summary_file}")
+
+    observed = json.loads(summary_file.read_text())
+    expected = DEFAULT_LEGACY_1KGP_COUNTS.get(gene_upper)
+    comparison = {
+        "workspace_root": str(Path(workspace_root).expanduser().resolve()),
+        "summary_file": str(summary_file),
+        "manual": {
+            "csv_exists": manual_csv.exists(),
+            "xlsx_exists": manual_xlsx.exists(),
+        },
+        "observed_counts": observed.get("counts", {}),
+        "expected_counts": expected,
+        "retention_percent": {},
+    }
+    if expected:
+        for key, expected_value in expected.items():
+            observed_value = observed.get("counts", {}).get(key)
+            if observed_value is None:
+                continue
+            comparison["retention_percent"][key] = round((observed_value / expected_value) * 100.0, 1)
+    return comparison
 
 
 def validate_workspace_root(workspace_root):
@@ -505,6 +735,28 @@ def build_parser():
     )
     run_parser.add_argument("gene", help="Gene symbol, for example CDKL5")
 
+    run_vcf_parser = subparsers.add_parser(
+        "run-1kgp-vcf",
+        help="Build a 1KGP workbook from a local/source VCF such as the legacy phase3 crossmap file.",
+    )
+    run_vcf_parser.add_argument("gene", help="Gene symbol, for example CDKL5")
+    run_vcf_parser.add_argument(
+        "--vcf",
+        required=True,
+        help="Path to a bgzipped and indexed source VCF, for example phase3.chrX.GRCh38.GT.crossmap.vcf.gz",
+    )
+
+    compare_parser = subparsers.add_parser(
+        "compare-1kgp",
+        help="Compare a generated 1KGP summary against the legacy/TGVR benchmark counts and report manual-data status.",
+    )
+    compare_parser.add_argument("gene", help="Gene symbol, for example CDKL5")
+    compare_parser.add_argument(
+        "--summary-path",
+        default=None,
+        help="Optional path to a specific 1KGP summary json to compare",
+    )
+
     return parser
 
 
@@ -529,6 +781,9 @@ def main():
         print(f"  python3 scripts/tgvr_colab.py --workspace-root {workspace_root} install-manual CDKL5 {workspace_root}/manual_input/curated_variants.csv")
         print(f"  python3 scripts/tgvr_colab.py --workspace-root {workspace_root} run-clinvar CDKL5")
         print(f"  python3 scripts/tgvr_colab.py --workspace-root {workspace_root} run-1kgp CDKL5")
+        print(f"  # or for the legacy-style VCF-backed path")
+        print(f"  python3 scripts/tgvr_colab.py --workspace-root {workspace_root} run-1kgp-vcf CDKL5 --vcf /content/1kgp_source/phase3.chrX.GRCh38.GT.crossmap.vcf.gz")
+        print(f"  python3 scripts/tgvr_colab.py --workspace-root {workspace_root} compare-1kgp CDKL5")
         return 0
 
     if args.command == "install-manual":
@@ -556,6 +811,21 @@ def main():
         print(json.dumps(summary, indent=2))
         print("Workbook:", Path(summary["files"]["xlsx"]).resolve())
         print("Summary:", Path(summary["files"]["summary_json"]).resolve())
+        return 0
+
+    if args.command == "run-1kgp-vcf":
+        build_workspace(workspace_root)
+        ensure_gene_workspace_layout(workspace_root, args.gene)
+        summary = build_colab_1kgp_workbook_from_vcf(args.gene, workspace_root, args.vcf, logger=log)
+        print("Done.")
+        print(json.dumps(summary, indent=2))
+        print("Workbook:", Path(summary["files"]["xlsx"]).resolve())
+        print("Summary:", Path(summary["files"]["summary_json"]).resolve())
+        return 0
+
+    if args.command == "compare-1kgp":
+        comparison = compare_1kgp_outputs(args.gene, workspace_root, summary_path=args.summary_path)
+        print(json.dumps(comparison, indent=2))
         return 0
 
     raise SystemExit(f"Unsupported command: {args.command}")
