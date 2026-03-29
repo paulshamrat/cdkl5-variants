@@ -6,6 +6,8 @@ There are two different ways TGVR can handle `1kgp`, and they should not be mixe
 
 - `cached` or `auto` local use
   This is the normal stable local path.
+- Colab-independent API-backed `1kgp`
+  This is the safest path for users who do not have Palmetto and only need a Colab-friendly `1kgp` workbook build.
 - raw Palmetto-backed `1kgp`
   This is the heavier legacy-style reproduction path and requires the Palmetto bridge first.
 
@@ -37,6 +39,44 @@ python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp -
 For `CDKL5`, TGVR can seed the cached workbook from the legacy local export on first use.
 
 This is the path to trust first when you want reproducible local work without rerunning the heavy raw workflow.
+
+## Colab-Independent 1KGP
+
+For users without Palmetto access, the recommended Colab path is to build the `1kgp` workbook directly from public Ensembl APIs.
+
+This path is different from the raw Palmetto backend:
+
+- it does not require the Palmetto bridge
+- it does not require `bcftools`, `samtools`, or a local `VEP` cache
+- it does not require downloading a full human offline `VEP` cache into Colab
+- it produces the same practical TGVR-style `1kgp` workbook shape for `CDKL5`
+
+What it does instead:
+
+- looks up `CDKL5` from Ensembl
+- queries Ensembl overlap for `1kg_3` variants in the gene region
+- annotates missense `rs` ids through Ensembl `VEP`
+- writes a workbook with the same useful sheets used by the cached TGVR path
+
+Minimal Colab setup:
+
+```python
+import sys
+import subprocess
+from pathlib import Path
+
+subprocess.run([sys.executable, "-m", "pip", "install", "-U", "pip"], check=True)
+subprocess.run([sys.executable, "-m", "pip", "install", "pandas", "openpyxl", "requests"], check=True)
+
+Path("/content/out").mkdir(parents=True, exist_ok=True)
+print("Colab setup ready. Output dir: /content/out")
+```
+
+Practical recommendation:
+
+- if you only need a usable `CDKL5` `1kgp` workbook in Colab, use the Colab-independent API-backed path
+- if you need the heavier legacy-style `VCF -> VEP -> parsed table` reproduction, use Palmetto
+- if you already trust the cached workbook, keep using `--1kgp-mode cached`
 
 ## Raw Palmetto-Backed 1KGP
 
@@ -170,6 +210,7 @@ Current verified final full-length label counts:
 Use this decision rule:
 
 - if you just want to run TGVR locally, use `--1kgp-mode cached`
+- if you need a Colab-safe `1kgp` path without Palmetto, use the Colab-independent API-backed workbook build
 - if you need to regenerate the heavy raw `1kgp` source path, bridge Palmetto first and use `manage_1kgp_palmetto.py`
 
 ## Canonical End-To-End Command Block

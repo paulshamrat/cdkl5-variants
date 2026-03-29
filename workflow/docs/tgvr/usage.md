@@ -122,6 +122,56 @@ python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage summar
 python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage summary-range --range 1-302 --label "Kinase domain"
 ```
 
+### Colab-Independent `1kgp` Workbook Build
+
+If you do not have Palmetto access and only need the `1kgp` stage input workbook in Colab, use the Colab-independent API-backed path instead of the heavy raw backend.
+
+This route:
+
+- is safe for ordinary Colab notebook use
+- avoids a large offline `VEP` cache download
+- does not require a public tunnel, `sshd`, or a Palmetto bridge
+- is intended for building the `1kgp` workbook itself, not reproducing the exact raw Palmetto backend byte-for-byte
+
+Minimal Colab setup cell:
+
+```python
+import sys
+import subprocess
+from pathlib import Path
+
+subprocess.run([sys.executable, "-m", "pip", "install", "-U", "pip"], check=True)
+subprocess.run([sys.executable, "-m", "pip", "install", "pandas", "openpyxl", "requests"], check=True)
+
+Path("/content/out").mkdir(parents=True, exist_ok=True)
+print("Colab setup ready. Output dir: /content/out")
+```
+
+Drive-backed Colab terminal helper:
+
+- [tgvr_colab.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/tgvr_colab.py)
+
+Example terminal flow after Drive is mounted in the notebook UI:
+
+```bash
+python3 workflow/tgvr/scripts/tgvr_colab.py init
+cd /content/drive/MyDrive/tgvr_colab
+python3 scripts/tgvr_colab.py run-1kgp CDKL5
+```
+
+What the Colab-independent `1kgp` builder does:
+
+- queries Ensembl for the `CDKL5` gene region
+- requests `1kg_3` overlap variants for that region
+- annotates missense variants through Ensembl `VEP`
+- writes a TGVR-style workbook under `/content/out/1kgp_cdkl5_grch38.xlsx`
+
+Decision rule:
+
+- use Palmetto when you need the heavy legacy-style raw `VCF -> VEP -> parsed table` backend
+- use the Colab-independent API-backed path when you need a practical `1kgp` workbook in Colab
+- use `--1kgp-mode cached` when the workbook already exists locally and is trusted
+
 The `all` shortcut is still available, but the explicit staged form is preferred because the master depends on a correct `1kgp` stage.
 
 Important note:
