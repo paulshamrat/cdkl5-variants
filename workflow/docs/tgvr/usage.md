@@ -20,6 +20,65 @@ python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage all
 
 This section is the main begin-to-finish workflow for `CDKL5` variant curation.
 
+Typical `CDKL5` variant-curation layout:
+
+```text
+workflow/tgvr
+├── 00_data
+│   └── cdkl5
+│       ├── 01_variant_curation
+│       │   ├── 1kgp
+│       │   ├── clinvar
+│       │   ├── gnomad
+│       │   └── manual
+│       │       └── curated_variants.csv
+│       └── reference
+└── outputs
+    └── cdkl5
+        └── 01_variant_curation
+            ├── logs
+            └── master
+```
+
+### Optional Prerequisite: Manual Curated File
+
+If you want `master --use-manual` to include manually curated variants, install the manual file before running the main staged workflow.
+
+Install a CSV:
+
+```bash
+cd ~/cdkl5-variants
+conda activate tgvr
+
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage master --manual-file /path/to/curated_variants.csv
+```
+
+Or install an Excel file:
+
+```bash
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage master --manual-file /path/to/curated_variants.xlsx
+```
+
+This copies the file into:
+
+```text
+workflow/tgvr/00_data/cdkl5/01_variant_curation/manual/
+```
+
+Expected minimal columns:
+
+```text
+Mutation,Consequence,Source
+```
+
+Example preview:
+
+```csv
+Mutation,Consequence,Source
+R178W,Likely pathogenic,Hector2017
+G20R,Uncertain significance,Manual review
+```
+
 ### Canonical End-To-End Run
 
 Use this command block when you want the full reproducible path from Palmetto-backed raw `1kgp` regeneration through the final TGVR summaries:
@@ -69,6 +128,7 @@ Important note:
 
 - `--stage all` currently means the non-manual path
 - if you want manual curated variants included, rerun the `master` step explicitly with `--use-manual`
+- the manual curated file is not part of the `1kgp` stage itself; it is read only by the `master --use-manual` step from `workflow/tgvr/00_data/<gene>/01_variant_curation/manual/curated_variants.csv` (or an installed `.xlsx` equivalent)
 
 ### Variant-Curation Outputs
 

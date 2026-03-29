@@ -45,6 +45,12 @@ workflow/tgvr/00_data/<gene>/reference/canonical_uniprot_<UNIPROT>.fasta
 
 ## Common Commands
 
+Optional prerequisite when manual curated variants should be included:
+
+```bash
+python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage master --manual-file /path/to/curated_variants.csv
+```
+
 Fastest run:
 
 ```bash
@@ -55,6 +61,7 @@ Recommended reproducible pattern when manual curated variants should be included
 
 ```bash
 python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage all
+python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage master --manual-file /path/to/curated_variants.csv
 python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage master --use-manual
 python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage summary-full
 python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage summary-range --range START-END --label "Feature label"
@@ -64,6 +71,10 @@ Important:
 
 - `--stage all` currently means the non-manual path
 - if you want manual curated variants included, rerun `master` with `--use-manual`
+- the manual curated file is a master-stage input, not a `1kgp`-stage input
+- by default TGVR looks for it at `workflow/tgvr/00_data/<gene>/01_variant_curation/manual/curated_variants.csv`
+- you can also install a manual file with `--manual-file <path>` before running the master stage
+- the required minimal columns are `Mutation`, `Consequence`, and `Source`
 
 ## 1KGP Modes
 
