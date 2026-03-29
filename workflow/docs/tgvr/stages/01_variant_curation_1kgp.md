@@ -54,9 +54,9 @@ Run this exact block first:
 
 ```bash
 rm -f ~/.ssh/palmetto.sock
-ssh -M -S ~/.ssh/palmetto.sock -o ControlPersist=6h -fN YOUR_USERNAME@slogin.palmetto.clemson.edu
-ssh -S ~/.ssh/palmetto.sock -O check YOUR_USERNAME@slogin.palmetto.clemson.edu
-ssh -S ~/.ssh/palmetto.sock YOUR_USERNAME@slogin.palmetto.clemson.edu "hostname && whoami"
+ssh -M -S ~/.ssh/palmetto.sock -o ControlPersist=6h -fN $USER@slogin.palmetto.clemson.edu
+ssh -S ~/.ssh/palmetto.sock -O check $USER@slogin.palmetto.clemson.edu
+ssh -S ~/.ssh/palmetto.sock $USER@slogin.palmetto.clemson.edu "hostname && whoami"
 ```
 
 If this bridge is not active, the Palmetto-backed `1kgp` manager commands should not be expected to work.
@@ -181,9 +181,9 @@ cd ~/cdkl5-variants
 conda activate tgvr
 
 rm -f ~/.ssh/palmetto.sock
-ssh -M -S ~/.ssh/palmetto.sock -o ControlPersist=6h -fN YOUR_USERNAME@slogin.palmetto.clemson.edu
-ssh -S ~/.ssh/palmetto.sock -O check YOUR_USERNAME@slogin.palmetto.clemson.edu
-ssh -S ~/.ssh/palmetto.sock YOUR_USERNAME@slogin.palmetto.clemson.edu "hostname && whoami"
+ssh -M -S ~/.ssh/palmetto.sock -o ControlPersist=6h -fN $USER@slogin.palmetto.clemson.edu
+ssh -S ~/.ssh/palmetto.sock -O check $USER@slogin.palmetto.clemson.edu
+ssh -S ~/.ssh/palmetto.sock $USER@slogin.palmetto.clemson.edu "hostname && whoami"
 
 python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 setup
 python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 submit
