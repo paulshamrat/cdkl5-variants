@@ -1,0 +1,13 @@
+{
+  "files": {
+    "ddgemb_seq_mutation_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/prepared_inputs/06_ddgemb_seq/cdkl5_mutations_only_ddgemb.txt",
+    "ddmut_str_mutation_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/prepared_inputs/08_ddmut_str/cdkl5_mutations_formatted.txt",
+    "inps_seq_mutation_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/prepared_inputs/03_inps_seq/cdkl5_mutations_only.txt",
+    "mcsm_str_mutation_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/prepared_inputs/07_mcsm_str/cdkl5_mutations_formatted.txt",
+    "saafecseq_mutation_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/prepared_inputs/01_saafecseq/mutation_list.txt"
+  },
+  "input_workbook": "/home/paul/cdkl5-variants/00_data/01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af.xlsx",
+  "manual_note": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/prepared_inputs/MANUAL_INPUTS_REQUIRED.md",
+  "mutation_count": 156,
+  "prepared_inputs_dir": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/prepared_inputs"
+}

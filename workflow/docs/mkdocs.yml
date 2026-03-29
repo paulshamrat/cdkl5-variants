@@ -1,0 +1,28 @@
+site_name: CDKL5 Workflow Docs
+site_description: Local browsable documentation for the workflow development area
+docs_dir: .
+site_dir: ../site
+use_directory_urls: true
+exclude_docs: |
+  MEMORY.md
+  notebook.md
+  legacy_maps/**
+  publications/**
+  stages/**
+
+theme:
+  name: mkdocs
+
+nav:
+  - Home: index.md
+  - Project Status: PROJECT_STATUS.md
+  - TGVR:
+      - Overview: tgvr/index.md
+      - Installation: tgvr/installation.md
+      - Usage: tgvr/usage.md
+      - Architecture: tgvr/architecture.md
+      - Stages:
+          - 01 Variant Curation: tgvr/stages/01_variant_curation.md
+          - 01 Variant Curation 1KGP: tgvr/stages/01_variant_curation_1kgp.md
+          - 02 Folding: tgvr/stages/02_folding.md
+          - 03 Binding: tgvr/stages/03_binding.md

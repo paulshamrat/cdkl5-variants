@@ -1,0 +1,27 @@
+{
+  "inputs": {
+    "clinvar_txt": "/home/paul/cdkl5-variants/00_data/clinvar_result.txt",
+    "gnomad_csv": "/home/paul/cdkl5-variants/00_data/gnomAD.csv",
+    "hector_workbook": "/home/paul/cdkl5-variants/00_data/hector2017.xlsx",
+    "kgp_workbook": "/home/paul/cdkl5-variants/00_data/1kgp_cdkl5_grch38.xlsx",
+    "legacy_summary_workbook": "/home/paul/cdkl5-variants/00_data/clinvar_kgp_hector_unique_summary.xlsx",
+    "reference_fasta": "/home/paul/cdkl5-variants/250315_colabfold/cdkl5.fasta"
+  },
+  "outputs": {
+    "clinvar_workbook": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/data_cleaning/clinvar_result.xlsx",
+    "combined_workbook": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/data_cleaning/clinvar_kgp_hector_unique_summary.xlsx",
+    "gnomad_workbook": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/data_cleaning/gnomAD.xlsx",
+    "kgp_workbook": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/data_cleaning/1kgp_cdkl5_grch38.xlsx"
+  },
+  "summary": {
+    "clinvar_rows": 120,
+    "combined_rows_after_sequence_filter": 156,
+    "combined_rows_before_sequence_filter": 158,
+    "hector_unique_rows": 30,
+    "kgp_unique_rows": 8,
+    "sequence_mismatches": [
+      "A153G",
+      "Y145H"
+    ]
+  }
+}

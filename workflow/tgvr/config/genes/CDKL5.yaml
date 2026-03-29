@@ -1,0 +1,20 @@
+gene:
+  symbol: CDKL5
+clinvar:
+  condition_filter_mode: contains
+  condition_filter_value: CDKL5
+reference:
+  uniprot_accession: O76039
+  sequence_length: 960
+  fasta: 00_data/cdkl5/reference/canonical_uniprot_O76039.fasta
+  source: UniProt REST API
+  source_url: https://rest.uniprot.org/uniprotkb/O76039.fasta
+  reported_gene_name: CDKL5
+  uniprot_entry: CDKL5_HUMAN
+transcripts:
+  preferred: []
+features:
+  primary_domain:
+    label: Kinase domain
+    start: 1
+    end: 302

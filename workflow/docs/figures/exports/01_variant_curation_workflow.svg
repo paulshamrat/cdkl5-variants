@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860">
+  <rect width="1400" height="860" fill="#ffffff"/>
+  <text x="700" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="700">01_variant_curation workflow</text>
+
+  <rect x="610" y="90" rx="14" ry="14" width="180" height="70" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+  <text x="700" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700">Gene query</text>
+  <text x="700" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="18">CDKL5</text>
+
+  <rect x="70" y="240" rx="14" ry="14" width="250" height="110" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+  <text x="195" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700">ClinVar stage</text>
+  <text x="195" y="298" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">download/filter SNV missense</text>
+  <text x="195" y="322" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">with CDKL5 condition</text>
+
+  <rect x="385" y="240" rx="14" ry="14" width="250" height="110" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+  <text x="510" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700">1000 Genomes stage</text>
+  <text x="510" y="298" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">query live Ensembl</text>
+  <text x="510" y="322" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">keep CDKL5 missense variants</text>
+
+  <rect x="700" y="240" rx="14" ry="14" width="250" height="110" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+  <text x="825" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700">gnomAD stage</text>
+  <text x="825" y="298" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">fetch live gene payload</text>
+  <text x="825" y="322" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">build AF lookup table</text>
+
+  <rect x="1015" y="240" rx="14" ry="14" width="250" height="110" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+  <text x="1140" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700">Optional manual input</text>
+  <text x="1140" y="298" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">inputs/&lt;gene&gt;/manual/</text>
+  <text x="1140" y="322" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">curated_variants.csv</text>
+
+  <rect x="410" y="430" rx="18" ry="18" width="530" height="160" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+  <text x="675" y="460" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700">Master dataset construction</text>
+  <text x="430" y="495" font-family="Arial, sans-serif" font-size="15">1. Standardize source labels and columns</text>
+  <text x="430" y="520" font-family="Arial, sans-serif" font-size="15">2. Keep 1KGP variants unique vs ClinVar</text>
+  <text x="430" y="545" font-family="Arial, sans-serif" font-size="15">3. Add manual unique variants when present</text>
+  <text x="430" y="570" font-family="Arial, sans-serif" font-size="15">4. Join gnomAD allele frequency</text>
+  <text x="430" y="595" font-family="Arial, sans-serif" font-size="15">5. Sequence check and filter mismatches</text>
+
+  <rect x="110" y="655" rx="14" ry="14" width="300" height="145" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
+  <text x="260" y="685" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700">Generated outputs</text>
+  <text x="260" y="715" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">outputs/&lt;gene&gt;/clinvar/</text>
+  <text x="260" y="740" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">outputs/&lt;gene&gt;/1kgp/</text>
+  <text x="260" y="765" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">outputs/&lt;gene&gt;/gnomad/</text>
+  <text x="260" y="790" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">outputs/&lt;gene&gt;/master/</text>
+
+  <rect x="495" y="680" rx="14" ry="14" width="230" height="95" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+  <text x="610" y="715" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700">Final master dataset</text>
+  <text x="610" y="745" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">10_master_dataset_final.csv</text>
+
+  <rect x="785" y="680" rx="14" ry="14" width="270" height="95" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+  <text x="920" y="712" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700">Classification summary</text>
+  <text x="920" y="740" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">11_classification_summary.csv</text>
+  <text x="920" y="763" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">12_domain_totals.csv</text>
+
+  <rect x="1130" y="650" rx="14" ry="14" width="220" height="145" fill="#f5f5f5" stroke="#666666" stroke-width="2"/>
+  <text x="1240" y="680" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700">Run modes</text>
+  <text x="1240" y="712" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">--stage clinvar</text>
+  <text x="1240" y="736" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">--stage 1kgp</text>
+  <text x="1240" y="760" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">--stage gnomad</text>
+  <text x="1240" y="784" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">--stage master / all</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="#444"/>
+    </marker>
+  </defs>
+
+  <line x1="700" y1="160" x2="195" y2="240" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="700" y1="160" x2="510" y2="240" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="700" y1="160" x2="825" y2="240" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="700" y1="160" x2="1140" y2="240" stroke="#444" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow)"/>
+
+  <line x1="195" y1="350" x2="500" y2="430" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="510" y1="350" x2="610" y2="430" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="825" y1="350" x2="750" y2="430" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1140" y1="350" x2="860" y2="430" stroke="#444" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow)"/>
+
+  <line x1="520" y1="590" x2="320" y2="655" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="640" y1="590" x2="610" y2="680" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="760" y1="590" x2="900" y2="680" stroke="#444" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

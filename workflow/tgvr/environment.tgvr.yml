@@ -1,0 +1,9 @@
+name: tgvr
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pandas>=2.2
+  - pyyaml>=6.0
+  - openpyxl>=3.1
+  - pip

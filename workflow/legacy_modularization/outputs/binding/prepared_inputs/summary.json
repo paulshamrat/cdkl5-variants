@@ -1,0 +1,12 @@
+{
+  "files": {
+    "ddmutppi_mutation_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/binding/prepared_inputs/07_ddmutppi/clinvar_1kgp_hector_gaf_final_mutlist.txt",
+    "foldx_individual_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/binding/prepared_inputs/03_foldx/individual_list_template.txt",
+    "mcsmppi_mutation_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/binding/prepared_inputs/05_mcsmppi/mutations_for_mcsmppi2.txt",
+    "saambe3d_mutation_list": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/binding/prepared_inputs/02_saambe3d/mutations_list.txt"
+  },
+  "input_workbook": "/home/paul/cdkl5-variants/04_binding/clinvar_1kgp_hector_gaf_final.xlsx",
+  "manual_note": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/binding/prepared_inputs/MANUAL_INPUTS_REQUIRED.md",
+  "mutation_count": 156,
+  "prepared_inputs_dir": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/binding/prepared_inputs"
+}

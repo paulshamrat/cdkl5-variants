@@ -1,0 +1,27 @@
+__pycache__/
+*.pyc
+
+outputs/**
+!outputs/
+!outputs/.gitkeep
+!outputs/processed/
+!outputs/processed/.gitkeep
+!outputs/predictor_inputs/
+!outputs/predictor_inputs/.gitkeep
+!outputs/predictor_results/
+!outputs/predictor_results/.gitkeep
+!outputs/reclassification/
+!outputs/reclassification/.gitkeep
+
+# TGVR runtime artifacts and bulky downloaded data should stay local.
+tgvr/outputs/**
+tgvr/00_data/**
+!tgvr/00_data/
+!tgvr/00_data/.gitkeep
+
+# Keep publications/reference downloads out of git.
+docs/publications/**/*.pdf
+docs/publications/**/*.xlsx
+
+# Local MkDocs build output.
+site/

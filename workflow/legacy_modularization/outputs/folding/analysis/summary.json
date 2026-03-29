@@ -1,0 +1,37 @@
+{
+  "analysis_dir": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/analysis",
+  "classes": [
+    "Benign",
+    "Pathogenic"
+  ],
+  "ddg_seq_columns": [
+    "ddG_saafecseq_seq",
+    "ddg_imutant2_seq",
+    "ddg_inps_seq",
+    "ddg_ddgun_seq",
+    "ddg_ddgemb_seq"
+  ],
+  "ddg_str_columns": [
+    "ddg_imutant2_str",
+    "ddg_inps_str",
+    "ddg_ddgun_str",
+    "ddg_mcsm_str",
+    "ddg_ddmut_str"
+  ],
+  "files": {
+    "summary_csv": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/analysis/cdkl5_folding_ddg_summary_table.csv",
+    "summary_excel": "/home/paul/cdkl5-variants/workflow/legacy_modularization/outputs/folding/analysis/cdkl5_folding_ddg_summary_table.xlsx"
+  },
+  "input_workbook": "/home/paul/cdkl5-variants/00_data/01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af.xlsx",
+  "ranges": {
+    "full": [
+      1,
+      895
+    ],
+    "kinase": [
+      1,
+      302
+    ]
+  },
+  "rows": 40
+}

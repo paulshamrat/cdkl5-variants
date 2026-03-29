@@ -1,0 +1,16 @@
+gene:
+  symbol: SYNGAP1
+clinvar:
+  condition_filter_mode: contains
+  condition_filter_value: SYNGAP1
+reference:
+  uniprot_accession: Q96PV0
+  sequence_length: 1343
+  fasta: 00_data/syngap1/reference/canonical_uniprot_Q96PV0.fasta
+  source: UniProt REST API
+  source_url: https://rest.uniprot.org/uniprotkb/Q96PV0.fasta
+  reported_gene_name: SYNGAP1
+  uniprot_entry: SYGP1_HUMAN
+transcripts:
+  preferred: []
+features: {}

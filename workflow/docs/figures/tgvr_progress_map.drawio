@@ -1,0 +1,109 @@
+<mxfile host="app.diagrams.net" modified="2026-03-26T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="tgvr_progress_map" name="tgvr_progress_map">
+    <mxGraphModel dx="1800" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="TGVR Progress Map" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="620" y="20" width="560" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="Thermodynamics-Guided Variant Reclassification&#xa;Goal: build a standalone variant reclassification method using folding, binding, and pathogenicity evidence" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="420" y="60" width="960" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="legend_impl" value="Green = implemented in TGVR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="70" y="140" width="220" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_partial" value="Yellow = active / in progress" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="320" y="140" width="220" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_planned" value="Gray = planned / not started" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="570" y="140" width="220" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_legacy" value="Blue note = legacy context available" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="820" y="140" width="240" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="sources" value="Reference Contexts&#xa;Repo-root legacy study workflow&#xa;Palmetto legacy (read-only)&#xa;Local works legacy (read-only)&#xa;Legacy modularization archive" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="70" y="230" width="260" height="150" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="stage1" value="01_variant_curation&#xa;Status: implemented and reproducible&#xa;- gene + UniProt aware&#xa;- manual curated option&#xa;- ClinVar / 1KGP / gnomAD&#xa;- full-length + range summaries" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="430" y="230" width="280" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="stage2" value="02_folding&#xa;Status: fresh start / in progress&#xa;- stage cleaned up intentionally&#xa;- DDGun-first start&#xa;- next: reproducible DDGun backend&#xa;- current: prepare-ddgun only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="780" y="230" width="280" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="stage3" value="03_binding&#xa;Status: scaffold implemented&#xa;- prepare / ingest / summary shape exists&#xa;- partner-specific design defined&#xa;- real runs still depend on external outputs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="230" width="280" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="stage4" value="04_pathogenicity&#xa;Status: planned&#xa;- legacy context exists&#xa;- TGVR stage not started yet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="230" width="220" height="160" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="stage5" value="05_reclassification / integration&#xa;Status: planned&#xa;- combine folding + binding + pathogenicity&#xa;- produce final evidence-driven calls" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="950" y="470" width="360" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="backend_title" value="Execution Backends" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="70" y="450" width="260" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="backend_local" value="Local&#xa;best for lightweight steps&#xa;and future portable installs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="70" y="500" width="180" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="backend_container" value="Container&#xa;target for standalone&#xa;user-facing execution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="280" y="500" width="180" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="backend_palmetto" value="Palmetto bridge&#xa;optional power-user backend&#xa;read-only legacy context + future runs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="490" y="500" width="220" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="backend_import" value="Manual import&#xa;for webserver-only or hard-to-package methods" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="740" y="500" width="220" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="now_title" value="What We Should Do Next" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="70" y="670" width="320" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="now1" value="1. Keep 01_variant_curation stable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="70" y="720" width="260" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="now2" value="2. Build reproducible DDGun backend for 02_folding" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="720" width="340" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="now3" value="3. Connect DDGun results back into TGVR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="750" y="720" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="now4" value="4. Expand method-by-method later" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="720" width="260" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="goal_box" value="Current impression&#xa;TGVR has a strong curated data foundation.&#xa;Folding is intentionally reset and should restart cleanly with DDGun.&#xa;Binding has a scaffold but still depends on external results." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="500" width="420" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e1" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="sources" target="stage1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="stage1" target="stage2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="stage2" target="stage3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="stage3" target="stage4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="stage2" target="stage5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="stage3" target="stage5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="stage4" target="stage5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

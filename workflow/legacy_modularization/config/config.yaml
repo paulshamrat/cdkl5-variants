@@ -1,0 +1,62 @@
+project:
+  name: cdkl5-variants
+  uniprot_id: O76039
+  residue_range: [1, 302]
+
+paths:
+  data_dir: "../../00_data"
+  folding_dir: "../../02_folding"
+  binding_dir: "../../04_binding"
+  pathogenicity_dir: "../../05_pathogenicity"
+  output_dir: "outputs/reclassification"
+  processed_dir: "outputs/processed"
+  predictor_inputs_dir: "outputs/predictor_inputs"
+  predictor_results_dir: "outputs/predictor_results"
+  saambe_outputs: "outputs/predictor_results/saambe_3d"
+  polyphen2_results: "outputs/predictor_results/polyphen2"
+  data_cleaning_dir: "outputs/data_cleaning"
+
+files:
+  raw_clinvar: "clinvar_result.txt"
+  gnomad_csv: "gnomAD.csv"
+  kgp_variants: "1kgp_cdkl5_grch38.xlsx"
+  hector_variants: "hector2017.xlsx"
+  folding_workbook: "../../00_data/01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af.xlsx"
+  processed_variants: "outputs/processed/cleaned_variants.xlsx"
+  binding_variants: "../../04_binding/clinvar_1kgp_hector_gaf_final.xlsx"
+  reclassified_output: "outputs/reclassification/reclassified_variants.xlsx"
+
+predictors:
+  methods: ["saambe3d", "mupit", "duet", "sdm", "mpro"]
+  colors: ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#B07AA1"]
+
+data_cleaning:
+  reference_fasta: "../../250315_colabfold/cdkl5.fasta"
+  legacy_summary_reference: "../../00_data/clinvar_kgp_hector_unique_summary.xlsx"
+  outputs:
+    clinvar_workbook: "outputs/data_cleaning/clinvar_result.xlsx"
+    gnomad_workbook: "outputs/data_cleaning/gnomAD.xlsx"
+    kgp_workbook: "outputs/data_cleaning/1kgp_cdkl5_grch38.xlsx"
+    combined_workbook: "outputs/data_cleaning/clinvar_kgp_hector_unique_summary.xlsx"
+    summary_json: "outputs/data_cleaning/summary.json"
+
+folding:
+  input_workbook: "../../00_data/01_cdkl5_clinvar_gaf_1kgp_hctr_comb_unq_af.xlsx"
+  structure_chain: "A"
+  prepared_inputs_dir: "outputs/folding/prepared_inputs"
+  analysis_dir: "outputs/folding/analysis"
+  analysis_classes: ["Benign", "Pathogenic"]
+  analysis_ranges:
+    full: [1, 895]
+    kinase: [1, 302]
+
+binding:
+  input_workbook: "../../04_binding/clinvar_1kgp_hector_gaf_final.xlsx"
+  analysis_workbook: "../../04_binding/analysis/clinvar_1kgp_hector_gaf_final_binding.xlsx"
+  structure_chain: "A"
+  prepared_inputs_dir: "outputs/binding/prepared_inputs"
+  analysis_dir: "outputs/binding/analysis"
+  analysis_classes: ["Benign", "Pathogenic"]
+  analysis_ranges:
+    full: [1, 895]
+    kinase: [1, 302]
