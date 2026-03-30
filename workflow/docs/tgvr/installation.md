@@ -6,7 +6,7 @@ TGVR currently uses one main Conda environment for local orchestration.
 
 Environment file:
 
-- [environment.tgvr.yml](/home/paul/cdkl5-variants/workflow/tgvr/environment.tgvr.yml)
+- `workflow/tgvr/environment.tgvr.yml`
 
 Create and activate it from the repository root:
 
@@ -41,7 +41,7 @@ This keeps the base environment lighter and avoids forcing large, harder-to-repr
 
 Variant curation now uses one public script:
 
-- [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
+- `workflow/tgvr/scripts/run_variant_curation.py`
 
 That single entrypoint covers:
 

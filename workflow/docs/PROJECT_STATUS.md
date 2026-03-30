@@ -1,73 +1,35 @@
-# Project Status
+# Current Results
 
-This file is the public-safe status summary for the workflow development branch.
+This page keeps the current verified `CDKL5` workflow summary short and easy to scan.
 
-## Current Structure
+## Current Workflow Status
 
-The repository currently uses three layers:
+- `01_variant_curation` is the main working stage
+- `02_folding` currently prepares `DDGun` input files
+- `03_binding` is still planned work
 
-- `legacy study workflow`
-  The original notebook-driven baseline at the repository root.
-- `legacy modularization`
-  The archived exact-reproduction modularization under `workflow/legacy_modularization/`.
-- `active development workflow`
-  The current TGVR development area under `workflow/tgvr/`.
+## Current Verified CDKL5 Output
 
-## Current TGVR State
+Current verified end-to-end totals:
 
-Current stage maturity:
+- full length: `163`
+- kinase domain (`1-302`): `114`
 
-- `01_variant_curation`
-  Most mature and actively verified stage.
-- `02_folding`
-  DDGun-first preparation stage.
-- `03_binding`
-  Planned/documented stage, not currently exposed as a public runnable script.
-
-## Current Verified CDKL5 Variant-Curation Result
-
-Current verified end-to-end `CDKL5` rerun results:
-
-- full-length total: `163`
-- kinase-domain total (`1-302`): `114`
-
-Current recommended public `1kgp` route:
+Recommended `1kgp` route for normal local use:
 
 - `--1kgp-mode vcf`
 
-Current legacy-comparison path:
+Legacy comparison route:
 
 - `--1kgp-mode palmetto`
 
-Full-length class counts:
+## Full-Length Class Counts
 
-- `Benign` 23
-- `Benign/Likely benign` 15
-- `Conflicting classifications of pathogenicity` 7
-- `Likely benign` 10
-- `Likely pathogenic` 26
-- `Pathogenic` 10
-- `Pathogenic/Likely pathogenic` 24
-- `Uncertain significance` 48
-
-## Public Documentation
-
-Public browser-safe docs live under:
-
-- `workflow/docs/tgvr/`
-
-Run them locally with:
-
-```bash
-mkdocs serve -f workflow/docs/mkdocs.yml -a 127.0.0.1:8001
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8001/
-```
-
-## Private Notes
-
-Personal notes, private infrastructure details, and local reference material should stay outside the public branch history.
+- `Benign`: `23`
+- `Benign/Likely benign`: `15`
+- `Conflicting classifications of pathogenicity`: `7`
+- `Likely benign`: `10`
+- `Likely pathogenic`: `26`
+- `Pathogenic`: `10`
+- `Pathogenic/Likely pathogenic`: `24`
+- `Uncertain significance`: `48`

@@ -13,7 +13,7 @@ It then performs a reference-sequence check and writes a final filtered master t
 
 ## Main Runner
 
-- [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
+- `workflow/tgvr/scripts/run_variant_curation.py`
 
 ## Core Workflow
 
@@ -125,12 +125,12 @@ Important:
 
 - prefer `vcf` for the main public workflow and for most local reruns
 - the `palmetto` route requires the Palmetto bridge first
-- all three routes are accessed through [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
+- all three routes are accessed through `workflow/tgvr/scripts/run_variant_curation.py`
 - see the dedicated `1KGP` page for the exact bridge block and the full `setup -> submit -> status -> log -> fetch` flow
 
 Detailed guide:
 
-- [01 Variant Curation: 1KGP](/home/paul/cdkl5-variants/workflow/docs/tgvr/stages/01_variant_curation_1kgp.md)
+- [01 Variant Curation: 1KGP](01_variant_curation_1kgp.md)
 
 ## CDKL5 Notes
 

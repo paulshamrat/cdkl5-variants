@@ -14,7 +14,7 @@ It is conceptually downstream of `01_variant_curation`.
 
 ## Important Current Reality
 
-The older stage notes describe a `run_binding.py` entrypoint and a binding implementation layer, but those public files are not currently present under [workflow/tgvr/scripts](/home/paul/cdkl5-variants/workflow/tgvr/scripts) or [workflow/tgvr/src](/home/paul/cdkl5-variants/workflow/tgvr/src).
+The older stage notes describe a `run_binding.py` entrypoint and a binding implementation layer, but those public files are not currently present under `workflow/tgvr/scripts` or `workflow/tgvr/src`.
 
 So this stage should currently be treated as:
 

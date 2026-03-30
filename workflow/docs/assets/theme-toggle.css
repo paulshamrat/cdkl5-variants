@@ -1,0 +1,103 @@
+body.dark-mode {
+  background: #0f1720;
+  color: #d6dee6;
+}
+
+body.dark-mode .wy-nav-content {
+  background: #0f1720;
+  color: #d6dee6;
+}
+
+body.dark-mode .wy-body-for-nav {
+  background: #0f1720;
+}
+
+body.dark-mode .wy-nav-content-wrap {
+  background: #0f1720;
+}
+
+body.dark-mode .wy-nav-side {
+  background: #131c26;
+}
+
+body.dark-mode .wy-side-nav-search,
+body.dark-mode .wy-nav-top {
+  background: #1d4f6b;
+}
+
+body.dark-mode .wy-menu-vertical a,
+body.dark-mode .wy-menu-vertical a:visited,
+body.dark-mode .wy-nav-content a,
+body.dark-mode .wy-nav-content a:visited {
+  color: #8cc8ff;
+}
+
+body.dark-mode .wy-menu-vertical li.current > a,
+body.dark-mode .wy-menu-vertical li.current > a:hover,
+body.dark-mode .wy-menu-vertical li.toctree-l1.current > a {
+  background: #1a2430;
+  color: #ffffff;
+}
+
+body.dark-mode .wy-menu-vertical li.current {
+  background: #0f1720;
+}
+
+body.dark-mode .wy-menu-vertical li.current ul {
+  background: #111923;
+}
+
+body.dark-mode code,
+body.dark-mode .rst-content tt,
+body.dark-mode .rst-content code {
+  background: #1c2733;
+  color: #e6edf3;
+  border-color: #2a3948;
+}
+
+body.dark-mode pre,
+body.dark-mode .rst-content pre code {
+  background: #111923;
+  color: #e6edf3;
+}
+
+body.dark-mode .rst-content table.docutils,
+body.dark-mode .rst-content table.docutils td,
+body.dark-mode .rst-content table.docutils th {
+  border-color: #334556;
+}
+
+body.dark-mode .rst-content table.docutils td,
+body.dark-mode .rst-content table.docutils th {
+  background: #0f1720;
+}
+
+body.dark-mode .rst-content blockquote {
+  border-left-color: #3c566f;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.7rem;
+  margin-left: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.theme-toggle:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 2px;
+}

@@ -4,7 +4,7 @@ This page documents the `1kgp` part of TGVR `01_variant_curation`.
 
 TGVR now uses one public entrypoint for all `1kgp` workflows:
 
-- [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
+- `workflow/tgvr/scripts/run_variant_curation.py`
 
 There are three supported `1kgp` modes under that one script:
 

@@ -19,11 +19,11 @@ What is not yet complete:
 
 ## Main Runner
 
-- [run_folding.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_folding.py)
+- `workflow/tgvr/scripts/run_folding.py`
 
 ## Reusable Implementation
 
-- [core.py](/home/paul/cdkl5-variants/workflow/tgvr/src/folding/core.py)
+- `workflow/tgvr/src/folding/core.py`
 
 ## Current Methods
 

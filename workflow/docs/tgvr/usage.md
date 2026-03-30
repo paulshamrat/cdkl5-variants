@@ -1,11 +1,11 @@
 # TGVR Usage
 
-TGVR is currently driven through explicit stage scripts under [workflow/tgvr/scripts](/home/paul/cdkl5-variants/workflow/tgvr/scripts).
+TGVR is currently driven through explicit stage scripts under `workflow/tgvr/scripts`.
 
 ## Current Public Entry Points
 
-- [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
-- [run_folding.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_folding.py)
+- `workflow/tgvr/scripts/run_variant_curation.py`
+- `workflow/tgvr/scripts/run_folding.py`
 
 At the moment, there is no public `run_binding.py` script in the tree, so the binding stage should be treated as planned/documented work rather than a runnable public CLI.
 
@@ -19,7 +19,7 @@ python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage all
 
 This section is the main begin-to-finish workflow for `CDKL5` variant curation through one public script:
 
-- [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
+- `workflow/tgvr/scripts/run_variant_curation.py`
 
 Typical `CDKL5` variant-curation layout:
 
@@ -240,9 +240,7 @@ Only Public VCF adds beyond Cached/Palmetto:
 
 - `R946G`
 
-Detailed stage notes:
-
-- [01 Variant Curation: 1KGP](/home/paul/cdkl5-variants/workflow/docs/tgvr/stages/01_variant_curation_1kgp.md)
+Detailed stage notes for `1kgp` are kept in the repository source docs, but the simplified site focuses on the main runnable workflow shown here.
 
 ## 02 Folding
 

@@ -1,76 +1,55 @@
-# TGVR Overview
+# What The Workflow Does
 
 TGVR stands for `Thermodynamics-Guided Variant Reclassification`.
 
-It is the active modular development workflow under [workflow/tgvr](/home/paul/cdkl5-variants/workflow/tgvr), intended to gradually replace repeated notebook logic with reusable, stage-oriented code while keeping the original repository root as the scientific baseline.
+It is the active workflow under `workflow/tgvr`.
 
-## Goal
+## Main Job
 
-TGVR is designed to:
+The workflow is meant to take a gene such as `CDKL5` and:
 
-- build reusable variant-processing stages instead of relying on large monolithic notebooks
-- preserve the scientific logic of the original CDKL5 study workflow
-- keep legacy root-level files untouched as the baseline
-- move forward in a way that can later support proteins beyond `CDKL5`
+1. gather variant evidence from sources such as `ClinVar`, `1kgp`, and `gnomAD`
+2. merge those inputs into one filtered master dataset
+3. prepare downstream inputs for folding analysis
+4. later support binding-analysis workflows
 
-## Current Maturity
+## Current Stages
 
-Current status by stage:
+### 1. Variant Curation
 
-- `01_variant_curation`
-  The most mature and reproducible TGVR stage today.
-- `02_folding`
-  Reset to a clean DDGun-first preparation stage. Input preparation is implemented; backend execution is not yet fully integrated.
-- `03_binding`
-  Conceptually defined and documented, but not currently exposed as a runnable public TGVR script in this tree.
+This is the main working stage today.
 
-## Working Model
+It:
 
-TGVR is organized around per-gene workspaces and explicit stages.
+- builds the master variant dataset
+- supports manual curated variants
+- writes summary tables for the full protein and selected residue ranges
 
-The high-level flow is:
+### 2. Folding
 
-1. initialize a gene-specific TGVR workspace
-2. build a master variant dataset
-3. prepare downstream folding inputs
-4. later integrate folding and binding evidence into broader reclassification analysis
+This stage currently prepares `DDGun` inputs from the curated variant set.
 
-## Layout
+It does not yet provide the full end-to-end folding backend.
+
+### 3. Binding
+
+This stage is planned, but it is not yet exposed as a public runnable script in the current tree.
+
+## Where Things Live
 
 ```text
 workflow/tgvr/
-  00_data/
-  config/
-  outputs/
-  scripts/
-  src/
+  00_data/    stable inputs
+  config/     gene configuration
+  outputs/    generated results
+  scripts/    commands you run
+  src/        implementation code
 ```
 
-Key parts:
+## Practical Takeaway
 
-- `00_data/`
-  Stable per-gene workflow inputs such as manual curated variants and canonical reference FASTA files.
-- `config/`
-  TGVR-native gene configuration.
-- `scripts/`
-  Main user-facing command entrypoints.
-- `outputs/`
-  Generated workflow outputs, downloaded stage caches, fetched Palmetto runs, and logs.
-- `src/`
-  Reusable stage logic.
+If you only need the part that works best right now, focus on:
 
-## CDKL5 As The First Real Target
-
-`CDKL5` is currently the most developed TGVR target.
-That work includes:
-
-- a mature `01_variant_curation` path
-- a cached `1kgp` backend for stable local reuse
-- a Palmetto-backed raw `1kgp` path for the heavier legacy-style reproduction
-- a current working kinase-domain default of `1-302`
-
-## Next Read
-
-- Open `Installation` for the environment setup.
-- Open `Usage` for common commands.
-- Open the stage pages for operational details.
+- `Setup`
+- `Run The Workflow`
+- `Current Results`

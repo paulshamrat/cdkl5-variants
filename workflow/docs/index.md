@@ -1,62 +1,42 @@
-# Workflow Docs
+# CDKL5 Workflow Docs
 
-This is the local documentation home for the workflow development area under `workflow/`.
+This site is the simple local guide to the active workflow under `workflow/tgvr`.
 
-## What Lives Here
+## What This Workflow Does
 
-- `TGVR`
-  The active development workflow for Thermodynamics-Guided Variant Reclassification.
-- `Project Status`
-  The public-safe summary of the current workflow state and verified results.
-- `Reference Notes`
-  Internal notes and legacy maps that remain in the repo but are not surfaced in the public browser docs.
+The workflow is being built to do three practical things:
 
-## Recommended Reading Order
+1. collect and merge variant evidence for a target gene
+2. prepare folding-analysis inputs for selected variants
+3. support later binding-analysis steps as that stage matures
 
-1. Open `TGVR > Overview` to understand the active workflow.
-2. Open `TGVR > Usage` for the main runnable commands.
-3. Open the individual TGVR stage pages for operational details.
-4. Use `PROJECT_STATUS.md` for the public-safe current-state summary.
+Today, the most complete part is variant curation.
 
-## Current State
+## Start Here
 
-The repository now has three important layers:
+- `What The Workflow Does`
+  Short overview of the workflow and the current stages.
+- `Setup`
+  How to create the environment and run the tools.
+- `Run The Workflow`
+  The main commands you actually use.
+- `Current Results`
+  The current verified `CDKL5` output summary.
 
-- `legacy study workflow`
-  The original notebook-driven baseline at the repository root.
-- `legacy modularization`
-  The archived exact-reproduction modularization under `workflow/legacy_modularization/`.
-- `active development workflow`
-  The current TGVR development area under `workflow/tgvr/`.
+## Current Reality
 
-The active stage with the strongest current support is `01_variant_curation`.
-`02_folding` is a DDGun-first preparation stage, and `03_binding` is currently documented as the planned modular binding stage rather than a fully implemented runnable stage.
+Right now:
 
-## Browse In A Local Browser
+- `01_variant_curation` is the main working stage
+- `02_folding` prepares DDGun inputs
+- `03_binding` is planned but not yet exposed as a public runnable script
 
-Install MkDocs if needed:
+## Local Preview
 
-```bash
-pip install mkdocs
-```
-
-Then from the repository root run:
+To serve the docs locally:
 
 ```bash
-mkdocs serve -f workflow/docs/mkdocs.yml -a 127.0.0.1:8001
+mkdocs serve -f workflow/docs/mkdocs.yml
 ```
 
-Open:
-
-```text
-http://127.0.0.1:8001
-```
-
-## Internal Files
-
-Some internal working files may remain locally in `workflow/docs/` for private continuity, but they should not be tracked in the public branch:
-
-- `MEMORY.md`
-- `notebook.md`
-- `legacy_maps/`
-- `publications/`
+Then open `http://127.0.0.1:8000/`.
