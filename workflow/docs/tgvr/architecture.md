@@ -25,20 +25,23 @@ There are currently three important layers in the repository:
 
 ```text
 workflow/tgvr/
+  00_data/
   config/
-  internal/
+  outputs/
   scripts/
   src/
 ```
 
 Responsibilities:
 
+- `00_data/`
+  Stable workflow inputs such as manual curated variants and reference FASTA files.
 - `scripts/`
   Small public command entrypoints for users.
 - `src/`
   Reusable implementation modules.
-- `internal/`
-  Helper code that supports public scripts but is not intended as the main public interface.
+- `outputs/`
+  Generated stage outputs, downloaded caches, fetched Palmetto runs, and logs.
 - `config/`
   Gene-specific configuration and reusable workflow settings.
 
@@ -49,14 +52,14 @@ TGVR organizes work by gene and by stage.
 Typical paths:
 
 ```text
-workflow/tgvr/00_data/<gene>/<stage>/
+workflow/tgvr/00_data/<gene>/...
 workflow/tgvr/outputs/<gene>/<stage>/
 ```
 
 This allows:
 
 - repeatable per-gene execution
-- stage-local inputs and outputs
+- stable inputs to stay separate from regenerable runtime artifacts
 - cleaner progression from curation to downstream modeling
 
 ## Current Public Surface
@@ -65,7 +68,7 @@ The currently exposed runnable surface is centered on:
 
 - variant curation
 - folding preparation
-- Palmetto management for the raw `1kgp` path
+- Palmetto-backed raw `1kgp` actions through the main variant-curation script
 
 The binding stage is documented conceptually, but it is not currently exposed through a public script in `workflow/tgvr/scripts/`.
 

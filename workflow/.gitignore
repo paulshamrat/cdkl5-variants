@@ -23,10 +23,8 @@ tgvr/00_data/**
 !tgvr/00_data/cdkl5/01_variant_curation/README.md
 !tgvr/00_data/cdkl5/01_variant_curation/manual/
 !tgvr/00_data/cdkl5/01_variant_curation/manual/curated_variants.xlsx
-!tgvr/00_data/cdkl5/01_variant_curation/1kgp/
-!tgvr/00_data/cdkl5/01_variant_curation/1kgp/1kgp_cdkl5_grch38.xlsx
-!tgvr/00_data/cdkl5/01_variant_curation/gnomad/
-!tgvr/00_data/cdkl5/01_variant_curation/gnomad/gnomad.csv
+!tgvr/00_data/cdkl5/reference/
+!tgvr/00_data/cdkl5/reference/canonical_uniprot_O76039.fasta
 
 # Keep publications/reference downloads out of git.
 docs/publications/**/*.pdf

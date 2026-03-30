@@ -28,12 +28,20 @@ Current stage maturity:
 
 Current verified end-to-end `CDKL5` rerun results:
 
-- full-length total: `162`
+- full-length total: `163`
 - kinase-domain total (`1-302`): `114`
+
+Current recommended public `1kgp` route:
+
+- `--1kgp-mode vcf`
+
+Current legacy-comparison path:
+
+- `--1kgp-mode palmetto`
 
 Full-length class counts:
 
-- `Benign` 22
+- `Benign` 23
 - `Benign/Likely benign` 15
 - `Conflicting classifications of pathogenicity` 7
 - `Likely benign` 10

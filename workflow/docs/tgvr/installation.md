@@ -37,35 +37,23 @@ Some heavier tools are still expected to remain optional or external:
 
 This keeps the base environment lighter and avoids forcing large, harder-to-reproduce scientific installations into the core TGVR setup too early.
 
-## Colab-Independent 1KGP Setup
+## Public Variant-Curation Entry Point
 
-For users working in Google Colab without Palmetto access, the recommended `1kgp` path is the lightweight API-backed workbook builder rather than the heavy raw backend.
+Variant curation now uses one public script:
 
-Minimal Colab setup:
+- [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
 
-```python
-import sys
-import subprocess
-from pathlib import Path
+That single entrypoint covers:
 
-subprocess.run([sys.executable, "-m", "pip", "install", "-U", "pip"], check=True)
-subprocess.run([sys.executable, "-m", "pip", "install", "pandas", "openpyxl", "requests"], check=True)
+- live `ClinVar`
+- `1kgp` cached mode
+- `1kgp` public VCF-backed mode
+- `1kgp` Palmetto-backed mode
+- live `gnomAD`
+- master table generation
+- summary tables
 
-Path("/content/out").mkdir(parents=True, exist_ok=True)
-print("Colab setup ready. Output dir: /content/out")
-```
-
-This Colab path:
-
-- avoids installing a large local offline `VEP` cache
-- avoids requiring Palmetto or a bridge socket
-- rebuilds the `CDKL5` `1kgp` workbook from public Ensembl APIs
-
-Drive-backed terminal helper:
-
-- [tgvr_colab.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/tgvr_colab.py)
-
-Use the Palmetto route only when you explicitly need the legacy-style raw `1kgp` backend.
+Use the public VCF-backed `1kgp` path when you want a Palmetto-free run. Use the Palmetto mode only when you explicitly want the legacy raw backend.
 
 ## Local Browser Docs
 

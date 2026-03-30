@@ -41,9 +41,7 @@ The high-level flow is:
 workflow/tgvr/
   00_data/
   config/
-  internal/
   outputs/
-  palmetto_templates/
   scripts/
   src/
 ```
@@ -51,15 +49,13 @@ workflow/tgvr/
 Key parts:
 
 - `00_data/`
-  Source and staged per-gene data.
+  Stable per-gene workflow inputs such as manual curated variants and canonical reference FASTA files.
 - `config/`
   TGVR-native gene configuration.
 - `scripts/`
   Main user-facing command entrypoints.
-- `internal/`
-  Internal helper implementations behind public entrypoints.
 - `outputs/`
-  Generated workflow outputs, kept local by default.
+  Generated workflow outputs, downloaded stage caches, fetched Palmetto runs, and logs.
 - `src/`
   Reusable stage logic.
 

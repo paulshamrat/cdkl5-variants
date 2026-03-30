@@ -1,14 +1,18 @@
-Seeded workflow-local inputs for `CDKL5` variant curation.
+Stable workflow-local inputs for `CDKL5` variant curation.
 
-These files were restored from the legacy top-level [`00_data`](/home/paul/cdkl5-variants/00_data) area so the TGVR workflow can be tested from within [`workflow/tgvr`](/home/paul/cdkl5-variants/workflow/tgvr) without depending on external copies.
+These files are the preserved inputs that should remain in [`workflow/tgvr/00_data`](/home/paul/cdkl5-variants/workflow/tgvr/00_data) between runs.
 
-Included seeds:
+Current stable inputs:
 
 - `manual/curated_variants.xlsx`
   Source: legacy `00_data/hector2017.xlsx`
-- `1kgp/1kgp_cdkl5_grch38.xlsx`
-  Source: legacy `00_data/1kgp_cdkl5_grch38.xlsx`
-- `gnomad/gnomad.csv`
-  Source: legacy `00_data/gnomAD.csv`
+- `../reference/canonical_uniprot_O76039.fasta`
+  Source: UniProt canonical sequence for `O76039`
 
-These are workflow-scoped seed inputs and benchmarks. Generated outputs should continue to go under [`workflow/tgvr/outputs`](/home/paul/cdkl5-variants/workflow/tgvr/outputs).
+Everything generated at run time now belongs under [`workflow/tgvr/outputs`](/home/paul/cdkl5-variants/workflow/tgvr/outputs), including:
+
+- downloaded ClinVar and gnomAD caches
+- cached `1kgp` workbooks
+- public `phase3` VCF source downloads
+- fetched Palmetto run directories
+- logs, summaries, and final master outputs

@@ -13,13 +13,17 @@ Use that documentation for:
 - canonical `CDKL5` variant-curation commands
 - current stage status
 
+Current data rule for variant curation:
+
+- keep stable inputs in `workflow/tgvr/00_data/`
+- keep runtime caches and generated results in `workflow/tgvr/outputs/`
+
 ## Main Entry Points
 
 Current public entry scripts:
 
 - [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
 - [run_folding.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_folding.py)
-- [manage_1kgp_palmetto.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/manage_1kgp_palmetto.py)
 
 ## Browser Docs
 
@@ -37,12 +41,12 @@ http://127.0.0.1:8001/
 
 Expected current `CDKL5` result after the manual-inclusive path:
 
-- full-length variants: `162`
+- full-length variants: `163`
 - kinase-domain variants `1-302`: `114`
 - note: the earlier UniProt-style kinase annotation had been discussed as `13-297`, but TGVR should use `1-302` for now
-- retained 1KGP benign rows in the final master: `8`
-
-</details>
+- retained 1KGP benign rows in the final master: `17`
+- main recommended public `1kgp` route: `--1kgp-mode vcf`
+- optional legacy comparison path: `--1kgp-mode palmetto`
 
 <details open>
 <summary><strong>02 Folding</strong></summary>
@@ -59,7 +63,7 @@ Current meaning of `02_folding`:
 
 Main stage guide:
 
-- [workflow/docs/stages/02_folding.md](/home/paul/cdkl5-variants/workflow/docs/stages/02_folding.md)
+- [workflow/docs/tgvr/stages/02_folding.md](/home/paul/cdkl5-variants/workflow/docs/tgvr/stages/02_folding.md)
 
 Shared runner:
 
@@ -93,6 +97,5 @@ The earlier binding scaffold is not part of the current minimal TGVR tree, so th
 
 ## Notes
 
-- `assess_local_gene_bootstrap.py` is older exploratory code and should not be treated as the main stage runner.
 - Update this file whenever a new stage is added or when a stage changes materially.
-- For now, treat `workflow/docs/stages/03_binding.md` as archived planning context, not as an active TGVR stage in the current minimal tree.
+- For now, treat `workflow/docs/tgvr/stages/03_binding.md` as archived planning context, not as an active TGVR stage in the current minimal tree.

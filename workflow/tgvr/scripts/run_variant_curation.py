@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import traceback
 import urllib.parse
@@ -17,6 +18,93 @@ SCRIPT_PATH = Path(__file__).resolve()
 REPO_ROOT = SCRIPT_PATH.parents[3]
 WORKFLOW_ROOT = REPO_ROOT / "workflow"
 TGVR_ROOT = WORKFLOW_ROOT / "tgvr"
+PALMETTO_1KGP_TEMPLATE = """#!/bin/bash
+#SBATCH --job-name=tgvr_1kgp_cdkl5_grch38_allvar_noid
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=04:00:00
+#SBATCH --output=__REMOTE_RUN_DIR__/logs/%x_%j.log
+
+set -euo pipefail
+
+module load anaconda3/2023.09-0
+source activate cdkl51000G_env
+module load biocontainers samtools/1.17 bcftools/1.17
+
+REMOTE_ROOT=__REMOTE_ROOT__
+REMOTE_RUN_DIR=__REMOTE_RUN_DIR__
+ASSET_ROOT=__ASSET_ROOT__
+DATA=$ASSET_ROOT/GRCh38
+VCF=phase3.chrX.GRCh38.GT.crossmap.vcf.gz
+CACHE=$ASSET_ROOT/vep_cache_GRCh38
+SIF=$ASSET_ROOT/vep.sif
+REGION=chrX:18425583-18653629
+
+mkdir -p "$REMOTE_RUN_DIR" "$REMOTE_RUN_DIR/logs"
+rm -f "$REMOTE_RUN_DIR"/*.vcf.gz "$REMOTE_RUN_DIR"/*.tbi "$REMOTE_RUN_DIR"/*.tsv "$REMOTE_RUN_DIR"/*.xlsx "$REMOTE_RUN_DIR"/*.html
+
+echo "[1] Subsetting CDKL5 ($REGION)..."
+bcftools view -r "$REGION" "$DATA/$VCF" -Oz -o "$REMOTE_RUN_DIR/cdkl5.region.GRCh38.vcf.gz"
+tabix -p vcf "$REMOTE_RUN_DIR/cdkl5.region.GRCh38.vcf.gz"
+
+echo "[2] Annotating with VEP (GRCh38)..."
+apptainer exec \
+  --bind "$REMOTE_RUN_DIR":/data_out \
+  --bind "$CACHE":/cache \
+  "$SIF" vep \
+    --input_file /data_out/cdkl5.region.GRCh38.vcf.gz \
+    --output_file /data_out/cdkl5.GRCh38.vep.vcf.gz \
+    --format vcf \
+    --vcf \
+    --cache --dir_cache /cache \
+    --assembly GRCh38 \
+    --offline \
+    --fork 4 \
+    --everything \
+    --compress_output bgzip \
+    --force_overwrite
+
+tabix -p vcf "$REMOTE_RUN_DIR/cdkl5.GRCh38.vep.vcf.gz"
+
+echo "[3] Extracting AF & CSQ..."
+bcftools query \
+  -f '%CHROM\t%POS\t%REF\t%ALT\t%INFO/AF\t%INFO/CSQ\n' \
+  "$REMOTE_RUN_DIR/cdkl5.GRCh38.vep.vcf.gz" \
+  > "$REMOTE_RUN_DIR/cdkl5.GRCh38.raw.af.csq.tsv"
+
+echo "[4] Parsing Gene, Consequence, HGVSc, HGVSp..."
+hdr=$(zgrep '^##INFO=<ID=CSQ' "$REMOTE_RUN_DIR/cdkl5.GRCh38.vep.vcf.gz" | sed 's/.*Format: //;s/\">//')
+IFS='|' read -r -a F <<< "$hdr"
+for i in "${!F[@]}"; do
+  [[ "${F[$i]}" == "SYMBOL" ]] && SI=$((i+1))
+  [[ "${F[$i]}" == "Consequence" ]] && CI=$((i+1))
+  [[ "${F[$i]}" == "HGVSc" ]] && HSC=$((i+1))
+  [[ "${F[$i]}" == "HGVSp" ]] && HSP=$((i+1))
+done
+
+echo -e "CHROM\tPOS\tREF\tALT\tRefGenome\tAF\tGene\tConsequence\tHGVSc\tHGVSp" \
+  > "$REMOTE_RUN_DIR/cdkl5.GRCh38.all_variants_noid.tsv"
+
+awk -v si="$SI" -v ci="$CI" -v hsc="$HSC" -v hsp="$HSP" -F'\t' 'BEGIN{OFS="\t"}{
+  af=$5; if(af==".") af="NA";
+  split($6,txs,","); split(txs[1],a,"|");
+  print $1,$2,$3,$4,"GRCh38",af,a[si],a[ci],a[hsc],a[hsp]
+}' "$REMOTE_RUN_DIR/cdkl5.GRCh38.raw.af.csq.tsv" >> "$REMOTE_RUN_DIR/cdkl5.GRCh38.all_variants_noid.tsv"
+
+python3 - <<'PY2'
+import pandas as pd
+from pathlib import Path
+run_dir = Path("__REMOTE_RUN_DIR__")
+tsv_path = run_dir / "cdkl5.GRCh38.all_variants_noid.tsv"
+xlsx_path = run_dir / "cdkl5.GRCh38.all_variants_noid.xlsx"
+pd.read_csv(tsv_path, sep="\t").to_excel(xlsx_path, index=False)
+PY2
+
+echo "DONE: $REMOTE_RUN_DIR"
+ls -lh "$REMOTE_RUN_DIR"
+"""
 
 AA_3_TO_1 = {
     "Ala": "A",
@@ -46,10 +134,21 @@ AA_3_TO_1 = {
     "Glx": "Z",
     "Xaa": "X",
 }
+AA_1_TO_3 = {
+    value: key
+    for key, value in AA_3_TO_1.items()
+    if len(value) == 1 and key not in {"Asx", "Glx", "Xaa"}
+}
 
 ENSEMBL_REST_BASE = "https://rest.ensembl.org"
 CLINVAR_VARIANT_SUMMARY_URL = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
 GNOMAD_API_URL = "https://gnomad.broadinstitute.org/api"
+PHASE3_CHRX_CROSSMAP_VCF_URL = (
+    "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/"
+    "1000G_2504_high_coverage/working/phase3_liftover_nygc_dir/"
+    "phase3.chrX.GRCh38.GT.crossmap.vcf.gz"
+)
+PHASE3_CHRX_CROSSMAP_TBI_URL = PHASE3_CHRX_CROSSMAP_VCF_URL + ".tbi"
 GENE_OUTPUT_SUBDIRS = ["clinvar", "1kgp", "gnomad", "master", "logs"]
 CLINVAR_COLUMNS = [
     "Name",
@@ -59,6 +158,13 @@ CLINVAR_COLUMNS = [
     "Germline classification",
     "Source",
 ]
+DEFAULT_PALMETTO_USERNAME = os.environ.get("TGVR_PALMETTO_USERNAME", "shamrap")
+DEFAULT_PALMETTO_REMOTE_ROOT = os.environ.get("TGVR_PALMETTO_REMOTE_ROOT", f"/home/{DEFAULT_PALMETTO_USERNAME}/tgvr")
+DEFAULT_PALMETTO_TARGET = os.environ.get(
+    "TGVR_PALMETTO_TARGET", f"{DEFAULT_PALMETTO_USERNAME}@slogin.palmetto.clemson.edu"
+)
+DEFAULT_PALMETTO_SOCKET = os.path.expanduser("~/.ssh/palmetto.sock")
+DEFAULT_LEGACY_1KGP_ROOT = "/project/ealexov/compbio/shamrat/250419_1000Genome"
 RUN_LOGGER = None
 
 
@@ -105,6 +211,18 @@ def stage_output_dir(gene_name):
     return TGVR_ROOT / "outputs" / gene_name.lower() / "01_variant_curation"
 
 
+def runtime_stage_dir(gene_name, stage_name):
+    path = stage_output_dir(gene_name) / stage_name
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def runtime_cache_dir(gene_name, stage_name):
+    path = runtime_stage_dir(gene_name, stage_name) / "cache"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def display_path(path):
     path = Path(path).resolve()
     try:
@@ -129,9 +247,7 @@ def ensure_gene_workspace(gene_name):
 
 def ensure_gene_input_dirs(gene_name):
     input_root = stage_data_dir(gene_name)
-    (input_root / "clinvar").mkdir(parents=True, exist_ok=True)
     (input_root / "manual").mkdir(parents=True, exist_ok=True)
-    (input_root / "gnomad").mkdir(parents=True, exist_ok=True)
     return input_root
 
 
@@ -212,6 +328,271 @@ def api_post_json(url, payload):
     )
     with urllib.request.urlopen(request) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def run_checked(command):
+    result = subprocess.run(command, check=True, text=True, capture_output=True)
+    return result.stdout
+
+
+def palmetto_remote_root(args):
+    return args.palmetto_remote_root or DEFAULT_PALMETTO_REMOTE_ROOT
+
+
+def palmetto_target(args):
+    return args.palmetto_target or DEFAULT_PALMETTO_TARGET
+
+
+def palmetto_socket(args):
+    return os.path.expanduser(args.palmetto_socket or DEFAULT_PALMETTO_SOCKET)
+
+
+def palmetto_target_username(target):
+    return target.split("@", 1)[0] if "@" in target else target
+
+
+def run_ssh_checked(sock_path, target, remote_command, stdin_text=None):
+    return subprocess.run(
+        ["ssh", "-S", sock_path, target, remote_command],
+        input=stdin_text,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+
+def render_template(template_text, replacements):
+    rendered = template_text
+    for key, value in replacements.items():
+        rendered = rendered.replace(key, value)
+    return rendered
+
+
+def extract_palmetto_job_id(stdout_text):
+    match = re.search(r"Submitted batch job (\d+)", stdout_text)
+    return match.group(1) if match else None
+
+
+def resolve_palmetto_remote_run_dir(gene_name, args):
+    if args.palmetto_remote_run_dir:
+        return args.palmetto_remote_run_dir
+    remote_root = palmetto_remote_root(args)
+    target = palmetto_target(args)
+    socket_path = palmetto_socket(args)
+    latest_cmd = (
+        f"ls -1dt {remote_root}/outputs/{gene_name.lower()}/01_variant_curation/1kgp/grch38_allvar_noid_* "
+        "2>/dev/null | head -n 1"
+    )
+    result = run_ssh_checked(socket_path, target, latest_cmd)
+    remote_run_dir = result.stdout.strip()
+    if not remote_run_dir:
+        raise SystemExit("No remote 1KGP Palmetto run directory was found.")
+    return remote_run_dir
+
+
+def setup_palmetto_1kgp_assets(args):
+    remote_root = palmetto_remote_root(args)
+    target = palmetto_target(args)
+    socket_path = palmetto_socket(args)
+    asset_root = f"{remote_root}/resources/1kgp"
+    remote_cmd = f"""
+set -euo pipefail
+ASSET_ROOT="{asset_root}"
+LEGACY_ROOT="{DEFAULT_LEGACY_1KGP_ROOT}"
+mkdir -p "$ASSET_ROOT/GRCh38"
+if [ ! -f "$ASSET_ROOT/vep.sif" ]; then
+  cp -a "$LEGACY_ROOT/vep.sif" "$ASSET_ROOT/vep.sif"
+fi
+if [ ! -d "$ASSET_ROOT/vep_cache_GRCh38" ]; then
+  cp -a "$LEGACY_ROOT/vep_cache_GRCh38" "$ASSET_ROOT/vep_cache_GRCh38"
+fi
+if [ ! -f "$ASSET_ROOT/GRCh38/phase3.chrX.GRCh38.GT.crossmap.vcf.gz" ]; then
+  cp -a "$LEGACY_ROOT/00_data/1000G_highcov/GRCh38/phase3.chrX.GRCh38.GT.crossmap.vcf.gz" "$ASSET_ROOT/GRCh38/"
+fi
+if [ ! -f "$ASSET_ROOT/GRCh38/phase3.chrX.GRCh38.GT.crossmap.vcf.gz.tbi" ]; then
+  cp -a "$LEGACY_ROOT/00_data/1000G_highcov/GRCh38/phase3.chrX.GRCh38.GT.crossmap.vcf.gz.tbi" "$ASSET_ROOT/GRCh38/"
+fi
+du -sh "$ASSET_ROOT/vep.sif" "$ASSET_ROOT/vep_cache_GRCh38" "$ASSET_ROOT/GRCh38/phase3.chrX.GRCh38.GT.crossmap.vcf.gz" "$ASSET_ROOT/GRCh38/phase3.chrX.GRCh38.GT.crossmap.vcf.gz.tbi"
+"""
+    result = run_ssh_checked(socket_path, target, remote_cmd)
+    print(f"Remote asset root: {asset_root}")
+    print(result.stdout.strip())
+    if result.stderr.strip():
+        print(result.stderr.strip())
+
+
+def submit_palmetto_1kgp(gene_name, args):
+    gene_upper = gene_name.upper()
+    if gene_upper != "CDKL5":
+        raise SystemExit("Palmetto-backed raw 1KGP currently supports only CDKL5")
+
+    remote_root = palmetto_remote_root(args)
+    target = palmetto_target(args)
+    socket_path = palmetto_socket(args)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    remote_run_dir = f"{remote_root}/outputs/cdkl5/01_variant_curation/1kgp/grch38_allvar_noid_{timestamp}"
+    remote_script_path = f"{remote_root}/jobs/1kgp_cdkl5_grch38_allvar_noid_{timestamp}.sh"
+    asset_root = f"{remote_root}/resources/1kgp"
+
+    template_text = PALMETTO_1KGP_TEMPLATE
+    script_text = render_template(
+        template_text,
+        {
+            "__REMOTE_ROOT__": remote_root,
+            "__REMOTE_RUN_DIR__": remote_run_dir,
+            "__ASSET_ROOT__": asset_root,
+        },
+    )
+    setup_command = (
+        f"mkdir -p {remote_root}/jobs "
+        f"{remote_root}/outputs/cdkl5/01_variant_curation/1kgp "
+        f"{remote_run_dir}/logs"
+    )
+    run_ssh_checked(socket_path, target, setup_command)
+    run_ssh_checked(
+        socket_path,
+        target,
+        (
+            f"test -f {asset_root}/vep.sif "
+            f"-a -d {asset_root}/vep_cache_GRCh38 "
+            f"-a -f {asset_root}/GRCh38/phase3.chrX.GRCh38.GT.crossmap.vcf.gz "
+            f"-a -f {asset_root}/GRCh38/phase3.chrX.GRCh38.GT.crossmap.vcf.gz.tbi"
+        ),
+    )
+    run_ssh_checked(socket_path, target, f"cat > {remote_script_path}", stdin_text=script_text)
+    run_ssh_checked(socket_path, target, f"chmod +x {remote_script_path} && bash -n {remote_script_path}")
+    submit_result = run_ssh_checked(socket_path, target, f"sbatch {remote_script_path}")
+    job_id = extract_palmetto_job_id(submit_result.stdout)
+    print(f"Remote script: {remote_script_path}")
+    print(f"Remote run dir: {remote_run_dir}")
+    print(f"Remote asset root: {asset_root}")
+    if job_id:
+        print(f"Submitted batch job {job_id}")
+        print(
+            "Check status with:\n"
+            f"ssh -S {socket_path} {target} \"squeue -j {job_id} -o '%i %T %M %R'\""
+        )
+        print(
+            "Check log with:\n"
+            f"ssh -S {socket_path} {target} "
+            f"\"sed -n '1,160p' {remote_run_dir}/logs/tgvr_1kgp_cdkl5_grch38_allvar_noid_{job_id}.log\""
+        )
+        print(
+            "Fetch the completed run back into local TGVR with:\n"
+            f"python workflow/tgvr/scripts/run_variant_curation.py {gene_upper} O76039 "
+            f"--stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action fetch "
+            f"--palmetto-target {target} --palmetto-remote-root {remote_root} "
+            f"--palmetto-remote-run-dir {remote_run_dir}"
+        )
+    if submit_result.stderr.strip():
+        print(submit_result.stderr.strip())
+
+
+def palmetto_status(args):
+    target = palmetto_target(args)
+    socket_path = palmetto_socket(args)
+    username = palmetto_target_username(target)
+    if args.palmetto_job_id:
+        cmd = f"squeue -j {args.palmetto_job_id} -o '%i %T %M %R %j'"
+    else:
+        cmd = f"squeue -u {username} -o '%i %T %M %R %j'"
+    result = run_ssh_checked(socket_path, target, cmd)
+    print(result.stdout.strip())
+
+
+def palmetto_log(gene_name, args):
+    target = palmetto_target(args)
+    socket_path = palmetto_socket(args)
+    remote_run_dir = resolve_palmetto_remote_run_dir(gene_name, args)
+    if args.palmetto_job_id:
+        log_path = f"{remote_run_dir}/logs/tgvr_1kgp_cdkl5_grch38_allvar_noid_{args.palmetto_job_id}.log"
+    else:
+        latest_log_cmd = f"ls -1t {remote_run_dir}/logs/tgvr_1kgp_cdkl5_grch38_allvar_noid_*.log 2>/dev/null | head -n 1"
+        result = run_ssh_checked(socket_path, target, latest_log_cmd)
+        log_path = result.stdout.strip()
+        if not log_path:
+            raise SystemExit("No remote 1KGP Palmetto log file was found.")
+    result = run_ssh_checked(socket_path, target, f"sed -n '1,200p' {log_path}")
+    print(result.stdout.rstrip())
+
+
+def fetch_palmetto_1kgp(gene_name, args):
+    gene_upper = gene_name.upper()
+    if gene_upper != "CDKL5":
+        raise SystemExit("Palmetto-backed raw 1KGP currently supports only CDKL5")
+
+    target = palmetto_target(args)
+    socket_path = palmetto_socket(args)
+    remote_run_dir = resolve_palmetto_remote_run_dir(gene_name, args)
+    remote_tsv = f"{remote_run_dir}/cdkl5.GRCh38.all_variants_noid.tsv"
+    remote_xlsx = f"{remote_run_dir}/cdkl5.GRCh38.all_variants_noid.xlsx"
+    remote_log_dir = f"{remote_run_dir}/logs"
+
+    local_palmetto_dir = runtime_stage_dir(gene_upper, "1kgp") / "palmetto_runs" / Path(remote_run_dir).name
+    local_palmetto_dir.mkdir(parents=True, exist_ok=True)
+
+    tsv_text = run_ssh_checked(socket_path, target, f"cat {remote_tsv}").stdout
+    (local_palmetto_dir / "cdkl5.GRCh38.all_variants_noid.tsv").write_text(tsv_text, encoding="utf-8")
+
+    xlsx_bytes = subprocess.run(
+        ["ssh", "-S", socket_path, target, f"cat {remote_xlsx}"],
+        capture_output=True,
+        check=True,
+    ).stdout
+    (local_palmetto_dir / "cdkl5.GRCh38.all_variants_noid.xlsx").write_bytes(xlsx_bytes)
+
+    logs_listing = run_ssh_checked(socket_path, target, f"ls -1 {remote_log_dir} 2>/dev/null || true").stdout
+    if logs_listing.strip():
+        for log_name in [line.strip() for line in logs_listing.splitlines() if line.strip()]:
+            log_text = run_ssh_checked(socket_path, target, f"cat {remote_log_dir}/{log_name}").stdout
+            (local_palmetto_dir / log_name).write_text(log_text, encoding="utf-8")
+
+    raw_df = pd.read_csv(local_palmetto_dir / "cdkl5.GRCh38.all_variants_noid.tsv", sep="\t")
+    missense_only_df = raw_df[raw_df["Consequence"] == "missense_variant"].copy()
+    missense_gene_only_df = missense_only_df[missense_only_df["Gene"].astype(str).str.upper() == gene_upper].copy()
+    missense_unique_df = missense_gene_only_df.drop_duplicates().copy()
+    missense_unique_prot_df = missense_unique_df.copy()
+    missense_unique_prot_df["Protein change 3L"] = missense_unique_prot_df["HGVSp"].astype(str).str.extract(r":p\.(.+)")
+    missense_unique_prot_df["Protein change"] = missense_unique_prot_df["Protein change 3L"].apply(convert_three_letter_change)
+    missense_unique_prot_df = missense_unique_prot_df[missense_unique_prot_df["Protein change"].notna()].copy()
+
+    workbook_path = runtime_cache_dir(gene_upper, "1kgp") / f"1kgp_{gene_upper.lower()}_grch38.xlsx"
+    workbook_path.parent.mkdir(parents=True, exist_ok=True)
+    with pd.ExcelWriter(workbook_path) as writer:
+        raw_df.to_excel(writer, sheet_name="Sheet1", index=False)
+        missense_only_df.to_excel(writer, sheet_name="missense_only", index=False)
+        missense_gene_only_df.to_excel(writer, sheet_name="missense_cdkl5_only", index=False)
+        missense_unique_df.to_excel(writer, sheet_name="missense_cdkl5_unique", index=False)
+        missense_unique_prot_df.to_excel(writer, sheet_name="missense_cdkl5_unique_prot_chan", index=False)
+
+    print(f"Remote run dir: {remote_run_dir}")
+    print(f"Local fetched run dir: {local_palmetto_dir}")
+    print(f"Updated cached workbook: {workbook_path}")
+    print(
+        f"Counts: raw={len(raw_df)} missense={len(missense_only_df)} "
+        f"gene_only={len(missense_gene_only_df)} unique={len(missense_unique_df)} "
+        f"prot={len(missense_unique_prot_df)}"
+    )
+
+
+def run_palmetto_1kgp_action(gene_name, args):
+    action = args.kgp_palmetto_action
+    if action == "setup":
+        setup_palmetto_1kgp_assets(args)
+        return
+    if action == "submit":
+        submit_palmetto_1kgp(gene_name, args)
+        return
+    if action == "status":
+        palmetto_status(args)
+        return
+    if action == "log":
+        palmetto_log(gene_name, args)
+        return
+    if action == "fetch":
+        fetch_palmetto_1kgp(gene_name, args)
+        return
+    raise SystemExit(f"Unsupported Palmetto action: {action}")
 
 
 def fetch_gnomad_gene_payload(gene_name):
@@ -325,13 +706,19 @@ def initialize_gene_reference(gene_name, uniprot_id):
 
 
 def ensure_default_clinvar_bulk(gene_name, requested_path=None):
-    default_path = (
-        stage_data_dir(gene_name) / "clinvar" / "clinvar_variant_summary.txt.gz"
-    )
+    default_path = runtime_cache_dir(gene_name, "clinvar") / "clinvar_variant_summary.txt.gz"
     target_path = Path(requested_path) if requested_path else default_path
     if target_path.exists():
         return target_path.resolve()
     if target_path.resolve() == default_path.resolve():
+        legacy_path = stage_data_dir(gene_name) / "clinvar" / "clinvar_variant_summary.txt.gz"
+        if legacy_path.exists():
+            shutil.copy2(legacy_path, default_path)
+            RUN_LOGGER.log(
+                "ClinVar bulk file not found in outputs cache. Seeded it from the older workflow-local location at "
+                f"{display_path(legacy_path)}"
+            )
+            return default_path.resolve()
         RUN_LOGGER.log(
             "ClinVar bulk file not found. Downloading latest variant_summary.txt.gz to "
             f"{display_path(default_path)}"
@@ -341,13 +728,19 @@ def ensure_default_clinvar_bulk(gene_name, requested_path=None):
 
 
 def ensure_default_gnomad_json(gene_name, requested_path=None):
-    default_path = (
-        stage_data_dir(gene_name) / "gnomad" / "raw_response.json"
-    )
+    default_path = runtime_cache_dir(gene_name, "gnomad") / "raw_response.json"
     target_path = Path(requested_path) if requested_path else default_path
     if target_path.exists():
         return target_path.resolve()
     if target_path.resolve() == default_path.resolve():
+        legacy_path = stage_data_dir(gene_name) / "gnomad" / "raw_response.json"
+        if legacy_path.exists():
+            shutil.copy2(legacy_path, default_path)
+            RUN_LOGGER.log(
+                "gnomAD raw response not found in outputs cache. Seeded it from the older workflow-local location at "
+                f"{display_path(legacy_path)}"
+            )
+            return default_path.resolve()
         RUN_LOGGER.log(
             "gnomAD raw response not found. Fetching live gene payload to "
             f"{display_path(default_path)}"
@@ -361,24 +754,80 @@ def ensure_default_gnomad_json(gene_name, requested_path=None):
 
 def ensure_default_1kgp_workbook(gene_name, requested_path=None):
     gene_lower = gene_name.lower()
-    default_path = stage_data_dir(gene_name) / "1kgp" / f"1kgp_{gene_lower}_grch38.xlsx"
+    default_path = runtime_cache_dir(gene_name, "1kgp") / f"1kgp_{gene_lower}_grch38.xlsx"
     target_path = Path(requested_path) if requested_path else default_path
     if target_path.exists():
         return target_path.resolve()
     if requested_path:
         raise FileNotFoundError(f"Required input file not found: {target_path.resolve()}")
 
+    legacy_workflow_path = stage_data_dir(gene_name) / "1kgp" / f"1kgp_{gene_lower}_grch38.xlsx"
+    if legacy_workflow_path.exists():
+        default_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(legacy_workflow_path, default_path)
+        RUN_LOGGER.log(
+            "Cached 1KGP workbook not found in outputs cache. Seeded it from the older workflow-local location at "
+            f"{display_path(legacy_workflow_path)}"
+        )
+        return default_path.resolve()
+
     legacy_seed = REPO_ROOT / "00_data" / f"1kgp_{gene_lower}_grch38.xlsx"
     if legacy_seed.exists():
         default_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(legacy_seed, default_path)
         RUN_LOGGER.log(
-            "Cached 1KGP workbook not found in TGVR data. Seeded it from the legacy local workbook at "
+            "Cached 1KGP workbook not found in outputs cache. Seeded it from the legacy local workbook at "
             f"{display_path(legacy_seed)}"
         )
         return default_path.resolve()
 
     return None
+
+
+def ensure_default_1kgp_vcf(gene_name, requested_path=None):
+    gene_lower = gene_name.lower()
+    source_dir = runtime_stage_dir(gene_name, "1kgp") / "source"
+    default_vcf_path = source_dir / f"phase3.{gene_lower}.chrX.GRCh38.GT.crossmap.vcf.gz"
+    if requested_path:
+        target_path = Path(requested_path).expanduser().resolve()
+        if not target_path.exists():
+            raise FileNotFoundError(f"Required input file not found: {target_path}")
+        return target_path
+
+    if default_vcf_path.exists():
+        return default_vcf_path.resolve()
+
+    legacy_vcf_path = stage_data_dir(gene_name) / "1kgp" / "source" / f"phase3.{gene_lower}.chrX.GRCh38.GT.crossmap.vcf.gz"
+    legacy_tbi_path = Path(str(legacy_vcf_path) + ".tbi")
+    if legacy_vcf_path.exists():
+        source_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(legacy_vcf_path, default_vcf_path)
+        if legacy_tbi_path.exists():
+            shutil.copy2(legacy_tbi_path, Path(str(default_vcf_path) + ".tbi"))
+        RUN_LOGGER.log(
+            "1KGP phase3 crossmap VCF not found in outputs source cache. Seeded it from the older workflow-local location at "
+            f"{display_path(legacy_vcf_path)}"
+        )
+        return default_vcf_path.resolve()
+
+    source_dir.mkdir(parents=True, exist_ok=True)
+    RUN_LOGGER.log(
+        "1KGP phase3 crossmap VCF not found in outputs source cache. Downloading public chrX crossmap source to "
+        f"{display_path(default_vcf_path)}"
+    )
+    download_file(PHASE3_CHRX_CROSSMAP_VCF_URL, default_vcf_path)
+    tbi_path = Path(str(default_vcf_path) + ".tbi")
+    download_file(PHASE3_CHRX_CROSSMAP_TBI_URL, tbi_path)
+    return default_vcf_path.resolve()
+
+
+def detect_vcf_contig_prefix(vcf_path):
+    header = run_checked(["bcftools", "view", "-h", str(vcf_path)])
+    if "##contig=<ID=chrX>" in header or "##contig=<ID=chr1>" in header:
+        return "chr"
+    if "##contig=<ID=X>" in header:
+        return ""
+    return ""
 
 
 def convert_three_letter_change(change):
@@ -395,6 +844,17 @@ def convert_three_letter_change(change):
     return f"{wild_one}{position}{mutant_one}"
 
 
+def build_three_letter_hgvsp(amino_acids, protein_start):
+    if not isinstance(amino_acids, str) or "/" not in amino_acids or protein_start is None:
+        return None
+    wild_one, mutant_one = amino_acids.split("/", 1)
+    wild_three = AA_1_TO_3.get(wild_one)
+    mutant_three = AA_1_TO_3.get(mutant_one)
+    if not wild_three or not mutant_three:
+        return None
+    return f"p.{wild_three}{protein_start}{mutant_three}"
+
+
 def convert_hgvsp_to_one_letter(hgvsp):
     if not isinstance(hgvsp, str):
         return None
@@ -409,6 +869,15 @@ def extract_protein_change(name):
     if not match:
         return None
     return convert_three_letter_change(match.group(1))
+
+
+def extract_hgvsp_change(hgvsp):
+    if not isinstance(hgvsp, str):
+        return None
+    match = re.search(r"p\.([A-Z][a-z]{2}\d+(?:[A-Z][a-z]{2}|Ter))", hgvsp)
+    if not match:
+        return None
+    return match.group(1)
 
 
 def is_simple_missense_change(change):
@@ -670,7 +1139,7 @@ def build_1kgp_outputs(gene_name):
     missense_gene_only_df = missense_only_df[missense_only_df["Gene"] == gene_upper].copy()
     missense_unique_df = missense_gene_only_df.drop_duplicates().copy()
     missense_unique_prot_df = missense_unique_df.copy()
-    missense_unique_prot_df["Protein change 3L"] = missense_unique_prot_df["HGVSp"].astype(str).str.extract(r":p\.(.+)")
+    missense_unique_prot_df["Protein change 3L"] = missense_unique_prot_df["HGVSp"].apply(extract_hgvsp_change)
     missense_unique_prot_df["Protein change"] = missense_unique_prot_df["Protein change 3L"].apply(convert_three_letter_change)
 
     stage_files = {
@@ -710,6 +1179,207 @@ def build_1kgp_outputs(gene_name):
     return summary
 
 
+def build_genomic_hgvs(seq_region_name, pos, ref, alt):
+    if not all(isinstance(value, str) and value for value in [seq_region_name, ref, alt]):
+        return None
+    if "," in alt:
+        return None
+    if len(ref) == 1 and len(alt) == 1:
+        return f"{seq_region_name}:g.{pos}{ref}>{alt}"
+    return None
+
+
+def build_1kgp_outputs_vcf(gene_name, vcf_path):
+    gene_upper = gene_name.upper()
+    output_dir = stage_output_dir(gene_name) / "1kgp"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = output_dir / "cache_vcf"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    gene_config = load_gene_config(gene_upper)
+    preferred_transcripts = gene_config.get("transcripts", {}).get("preferred", [])
+
+    lookup_url = (
+        f"{ENSEMBL_REST_BASE}/lookup/symbol/homo_sapiens/"
+        f"{urllib.parse.quote(gene_upper)}?content-type=application/json"
+    )
+    lookup_payload = api_get_json(lookup_url)
+    canonical_transcript = lookup_payload.get("canonical_transcript")
+    seq_region_name = lookup_payload["seq_region_name"]
+    contig_prefix = detect_vcf_contig_prefix(vcf_path)
+    region = f"{contig_prefix}{seq_region_name}:{lookup_payload['start']}-{lookup_payload['end']}"
+
+    region_vcf = cache_dir / f"{gene_name.lower()}.region.vcf.gz"
+    subprocess.run(
+        ["bcftools", "view", "-r", region, str(vcf_path), "-Oz", "-o", str(region_vcf)],
+        check=True,
+    )
+    subprocess.run(["tabix", "-f", "-p", "vcf", str(region_vcf)], check=True)
+
+    query_output = run_checked(
+        [
+            "bcftools",
+            "query",
+            "-f",
+            "%CHROM\t%POS\t%REF\t%ALT\t%INFO/AF\t%ID\n",
+            str(region_vcf),
+        ]
+    ).splitlines()
+
+    gene_rows = []
+    rsid_rows = {}
+    hgvs_rows = {}
+    for index, line in enumerate(query_output):
+        chrom, pos, ref, alt, af, variant_id = line.split("\t")
+        row = {
+            "CHROM": chrom,
+            "POS": int(pos),
+            "REF": ref,
+            "ALT": alt,
+            "RefGenome": "GRCh38",
+            "AF": None if af == "." else af,
+            "Gene": gene_upper,
+            "Consequence": pd.NA,
+            "HGVSc": pd.NA,
+            "HGVSp": pd.NA,
+            "dbSNP ID": None if variant_id == "." else variant_id,
+        }
+        gene_rows.append(row)
+        if variant_id != ".":
+            rsid_rows.setdefault(variant_id, []).append(row)
+        else:
+            hgvs = build_genomic_hgvs(seq_region_name, pos, ref, alt)
+            if hgvs:
+                hgvs_rows.setdefault(hgvs, []).append(row)
+
+    gene_rows_df = pd.DataFrame(gene_rows)
+
+    vep_by_rsid = {}
+    rsids = sorted(rsid_rows)
+    if rsids:
+        for start in range(0, len(rsids), 200):
+            chunk = rsids[start : start + 200]
+            for entry in api_post_json(f"{ENSEMBL_REST_BASE}/vep/human/id?hgvs=1", {"ids": chunk}):
+                if "input" in entry:
+                    vep_by_rsid[entry["input"]] = entry
+
+    vep_by_hgvs = {}
+    hgvs_ids = sorted(hgvs_rows)
+    if hgvs_ids:
+        for start in range(0, len(hgvs_ids), 200):
+            chunk = hgvs_ids[start : start + 200]
+            variants = []
+            for hgvs in chunk:
+                source_row = hgvs_rows[hgvs][0]
+                variants.append(
+                    f"{seq_region_name} {source_row['POS']} . {source_row['REF']} {source_row['ALT']} . . ."
+                )
+            for entry in api_post_json(f"{ENSEMBL_REST_BASE}/vep/homo_sapiens/region", {"variants": variants}):
+                for consequence in entry.get("transcript_consequences") or []:
+                    if not consequence.get("hgvsp"):
+                        synthesized_hgvsp = build_three_letter_hgvsp(
+                            consequence.get("amino_acids"),
+                            consequence.get("protein_start"),
+                        )
+                        if synthesized_hgvsp:
+                            consequence["hgvsp"] = synthesized_hgvsp
+                if "input" in entry:
+                    fields = str(entry["input"]).split()
+                    if len(fields) >= 5:
+                        input_key = build_genomic_hgvs(seq_region_name, fields[1], fields[3], fields[4])
+                        if input_key:
+                            vep_by_hgvs[input_key] = entry
+
+    missense_rows = []
+
+    def append_annotated_rows(source_rows, vep_entry, fallback_id=None):
+        transcript = choose_transcript_consequence(
+            vep_entry.get("transcript_consequences", []),
+            gene_upper,
+            canonical_transcript,
+            preferred_transcripts=preferred_transcripts,
+        )
+        if transcript is None:
+            return
+        if "missense_variant" not in (transcript.get("consequence_terms") or []):
+            return
+        colocated = vep_entry.get("colocated_variants") or []
+        colocated_id = next((item.get("id") for item in colocated if item.get("id")), None)
+        for source_row in source_rows:
+            variant_allele = transcript.get("variant_allele") or source_row["ALT"]
+            missense_rows.append(
+                {
+                    "CHROM": source_row["CHROM"],
+                    "POS": source_row["POS"],
+                    "REF": source_row["REF"],
+                    "ALT": source_row["ALT"],
+                    "RefGenome": source_row["RefGenome"],
+                    "AF": source_row["AF"],
+                    "Gene": transcript.get("gene_symbol"),
+                    "Consequence": "missense_variant",
+                    "HGVSc": transcript.get("hgvsc"),
+                    "HGVSp": transcript.get("hgvsp"),
+                    "dbSNP ID": source_row["dbSNP ID"] or colocated_id or fallback_id,
+                }
+            )
+
+    for rsid, rows in rsid_rows.items():
+        entry = vep_by_rsid.get(rsid)
+        if entry:
+            append_annotated_rows(rows, entry, fallback_id=rsid)
+
+    for hgvs, rows in hgvs_rows.items():
+        entry = vep_by_hgvs.get(hgvs)
+        if entry:
+            append_annotated_rows(rows, entry)
+
+    missense_only_df = pd.DataFrame(missense_rows)
+    missense_gene_only_df = missense_only_df[missense_only_df["Gene"] == gene_upper].copy()
+    missense_unique_df = missense_gene_only_df.drop_duplicates().copy()
+    missense_unique_prot_df = missense_unique_df.copy()
+    missense_unique_prot_df["Protein change 3L"] = missense_unique_prot_df["HGVSp"].apply(extract_hgvsp_change)
+    missense_unique_prot_df["Protein change"] = missense_unique_prot_df["Protein change 3L"].apply(convert_three_letter_change)
+    missense_unique_prot_df = missense_unique_prot_df[missense_unique_prot_df["Protein change"].notna()].copy()
+
+    stage_files = {
+        "lookup_response": output_dir / "00_gene_lookup.json",
+        "region_vcf": output_dir / "00_region_subset.vcf.gz",
+        "gene_rows": output_dir / "01_gene_rows.csv",
+        "missense_only": output_dir / "02_missense_only.csv",
+        "missense_gene_only": output_dir / "03_missense_gene_only.csv",
+        "missense_unique": output_dir / "04_missense_gene_unique.csv",
+        "missense_unique_prot": output_dir / "05_missense_gene_unique_prot_chan.csv",
+    }
+    stage_files["lookup_response"].write_text(json.dumps(lookup_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    shutil.copy2(region_vcf, stage_files["region_vcf"])
+    index_path = Path(str(region_vcf) + ".tbi")
+    if index_path.exists():
+        shutil.copy2(index_path, Path(str(stage_files["region_vcf"]) + ".tbi"))
+    gene_rows_df.to_csv(stage_files["gene_rows"], index=False)
+    missense_only_df.to_csv(stage_files["missense_only"], index=False)
+    missense_gene_only_df.to_csv(stage_files["missense_gene_only"], index=False)
+    missense_unique_df.to_csv(stage_files["missense_unique"], index=False)
+    missense_unique_prot_df.to_csv(stage_files["missense_unique_prot"], index=False)
+
+    summary = {
+        "gene": gene_upper,
+        "mode": "vcf",
+        "ensembl_gene_id": lookup_payload.get("id"),
+        "canonical_transcript": canonical_transcript,
+        "source_vcf": str(Path(vcf_path).resolve()),
+        "subset_region": region,
+        "counts": {
+            "gene_rows": int(len(gene_rows_df)),
+            "missense_only": int(len(missense_only_df)),
+            "missense_gene_only": int(len(missense_gene_only_df)),
+            "missense_gene_unique": int(len(missense_unique_df)),
+            "missense_gene_unique_prot_chan": int(len(missense_unique_prot_df)),
+        },
+        "files": {key: str(path) for key, path in stage_files.items()},
+    }
+    (output_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return summary
+
+
 def build_1kgp_outputs_cached(gene_name, workbook_path):
     gene_upper = gene_name.upper()
     output_dir = stage_output_dir(gene_name) / "1kgp"
@@ -720,7 +1390,7 @@ def build_1kgp_outputs_cached(gene_name, workbook_path):
     missense_gene_only_df = missense_only_df[missense_only_df["Gene"].astype(str).str.upper() == gene_upper].copy()
     missense_unique_df = missense_gene_only_df.drop_duplicates().copy()
     missense_unique_prot_df = missense_unique_df.copy()
-    missense_unique_prot_df["Protein change 3L"] = missense_unique_prot_df["HGVSp"].astype(str).str.extract(r":p\.(.+)")
+    missense_unique_prot_df["Protein change 3L"] = missense_unique_prot_df["HGVSp"].apply(extract_hgvsp_change)
     missense_unique_prot_df["Protein change"] = missense_unique_prot_df["Protein change 3L"].apply(convert_three_letter_change)
     missense_unique_prot_df = missense_unique_prot_df[missense_unique_prot_df["Protein change"].notna()].copy()
 
@@ -1169,18 +1839,21 @@ def main():
         default=None,
         help=(
             "Path to downloaded ClinVar bulk file "
-            "(default: workflow/tgvr/00_data/<gene>/01_variant_curation/clinvar/clinvar_variant_summary.txt.gz)"
+            "(default: workflow/tgvr/outputs/<gene>/01_variant_curation/clinvar/cache/clinvar_variant_summary.txt.gz)"
         ),
     )
     parser.add_argument(
         "--1kgp-mode",
         dest="kgp_mode",
-        choices=["auto", "cached", "live"],
+        choices=["auto", "cached", "live", "vcf", "palmetto"],
         default="auto",
         help=(
             "How to build the 1000 Genomes stage. "
-            "'cached' uses a stable workbook under workflow/tgvr/00_data/<gene>/01_variant_curation/1kgp/, "
-            "'live' queries Ensembl Phase 3, and 'auto' prefers cached then falls back to live."
+            "'cached' uses a stable workbook under workflow/tgvr/outputs/<gene>/01_variant_curation/1kgp/cache/, "
+            "'live' queries Ensembl Phase 3 overlap directly, "
+            "'vcf' uses the public phase3 chrX crossmap VCF, "
+            "'palmetto' runs the legacy Palmetto-backed raw 1KGP flow directly from this script, "
+            "and 'auto' prefers cached then falls back to live."
         ),
     )
     parser.add_argument(
@@ -1192,6 +1865,28 @@ def main():
             "1kgp_<gene>_grch38.xlsx export."
         ),
     )
+    parser.add_argument(
+        "--1kgp-vcf",
+        dest="kgp_vcf",
+        default=None,
+        help=(
+            "Optional path to a phase3 chrX crossmap VCF. "
+            "If omitted in --1kgp-mode vcf, the public source is downloaded into "
+            "workflow/tgvr/outputs/<gene>/01_variant_curation/1kgp/source/."
+        ),
+    )
+    parser.add_argument(
+        "--1kgp-palmetto-action",
+        dest="kgp_palmetto_action",
+        choices=["setup", "submit", "status", "log", "fetch"],
+        default=None,
+        help="Palmetto action to use when --1kgp-mode palmetto is selected.",
+    )
+    parser.add_argument("--palmetto-remote-root", default=None, help="Override the remote TGVR root used by the Palmetto-backed 1KGP flow.")
+    parser.add_argument("--palmetto-target", default=None, help="Override the Palmetto SSH target used by the Palmetto-backed 1KGP flow.")
+    parser.add_argument("--palmetto-socket", default=None, help="Override the SSH control socket path used by the Palmetto-backed 1KGP flow.")
+    parser.add_argument("--palmetto-remote-run-dir", default=None, help="Explicit remote Palmetto run directory for fetch/log actions.")
+    parser.add_argument("--palmetto-job-id", default=None, help="Optional Palmetto Slurm job id for status/log actions.")
     parser.add_argument("--gnomad-json", help="Path to prepared raw gnomAD gene JSON response")
     parser.add_argument(
         "--manual-file",
@@ -1277,15 +1972,30 @@ def main():
 
         if args.stage in {"1kgp", "all"}:
             RUN_LOGGER.log("Running 1000 Genomes stage...")
+            if args.kgp_mode == "palmetto":
+                if args.stage != "1kgp":
+                    raise SystemExit("--1kgp-mode palmetto is only supported with --stage 1kgp")
+                if not args.kgp_palmetto_action:
+                    raise SystemExit("--1kgp-palmetto-action is required when --1kgp-mode palmetto is selected")
+                RUN_LOGGER.log(
+                    f"  - running the legacy Palmetto-backed 1KGP path with action '{args.kgp_palmetto_action}'"
+                )
+                run_palmetto_1kgp_action(gene_upper, args)
+                return 0
+
             if args.kgp_mode in {"auto", "cached"}:
                 workbook_path = ensure_default_1kgp_workbook(gene_upper, args.kgp_workbook)
             else:
                 workbook_path = None
+            if args.kgp_mode == "vcf":
+                vcf_path = ensure_default_1kgp_vcf(gene_upper, args.kgp_vcf)
+            else:
+                vcf_path = None
 
             if args.kgp_mode == "cached" and workbook_path is None:
                 raise FileNotFoundError(
                     "No cached 1KGP workbook was found. Provide --1kgp-workbook or place "
-                    f"{display_path(stage_data_dir(gene_upper) / '1kgp' / f'1kgp_{gene_upper.lower()}_grch38.xlsx')} "
+                    f"{display_path(runtime_cache_dir(gene_upper, '1kgp') / f'1kgp_{gene_upper.lower()}_grch38.xlsx')} "
                     "before running with --1kgp-mode cached."
                 )
 
@@ -1293,6 +2003,10 @@ def main():
                 RUN_LOGGER.log("  - using a cached 1KGP workbook as the primary benign-source backend")
                 RUN_LOGGER.log(f"  - cached workbook: {display_path(workbook_path)}")
                 kgp_summary = build_1kgp_outputs_cached(gene_upper, workbook_path)
+            elif vcf_path is not None:
+                RUN_LOGGER.log("  - using the public phase3 chrX crossmap VCF as the benign-source backend")
+                RUN_LOGGER.log(f"  - VCF source: {display_path(vcf_path)}")
+                kgp_summary = build_1kgp_outputs_vcf(gene_upper, vcf_path)
             else:
                 RUN_LOGGER.log("  - no cached workbook found; querying Ensembl Phase 3 live")
                 RUN_LOGGER.log("  - keeping gene-specific missense changes from the live overlap/VEP path")

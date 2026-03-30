@@ -2,91 +2,101 @@
 
 This page documents the `1kgp` part of TGVR `01_variant_curation`.
 
-There are two different ways TGVR can handle `1kgp`, and they should not be mixed up:
+TGVR now uses one public entrypoint for all `1kgp` workflows:
 
-- `cached` or `auto` local use
-  This is the normal stable local path.
-- Colab-independent API-backed `1kgp`
-  This is the safest path for users who do not have Palmetto and only need a Colab-friendly `1kgp` workbook build.
-- raw Palmetto-backed `1kgp`
-  This is the heavier legacy-style reproduction path and requires the Palmetto bridge first.
+- [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
+
+There are three supported `1kgp` modes under that one script:
+
+- `cached`
+  Reuse the existing local workbook under `workflow/tgvr/outputs/<gene>/01_variant_curation/1kgp/cache/`.
+- `vcf`
+  Build `1kgp` from the public `phase3` chrX crossmap VCF without Palmetto.
+- `palmetto`
+  Use the legacy Palmetto-backed raw workflow through the same main script.
 
 ## 1KGP Modes
 
-The main runner supports:
+The main runner supports three explicit `1kgp` commands:
 
-- `auto`
-- `cached`
-- `live`
-
-`auto` is the default.
-It prefers the cached workbook and only falls back to the live Ensembl-style path when needed.
-
-Main command:
+Recommended public path:
 
 ```bash
-python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage 1kgp --1kgp-mode auto
+python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage 1kgp --1kgp-mode vcf
+```
+
+Trusted cached workbook path:
+
+```bash
+python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage 1kgp --1kgp-mode cached
+```
+
+Legacy raw backend:
+
+```bash
+python workflow/tgvr/scripts/run_variant_curation.py GENE UNIPROT_ID --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action setup
 ```
 
 ## Recommended Local Path
 
-For normal local TGVR use, prefer the cached path:
+For normal local TGVR use, prefer the public VCF-backed path:
 
 ```bash
-python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode cached
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode vcf
 ```
 
-For `CDKL5`, TGVR can seed the cached workbook from the legacy local export on first use.
+This is the main public-friendly route because it:
 
-This is the path to trust first when you want reproducible local work without rerunning the heavy raw workflow.
+- uses a public source VCF
+- avoids Palmetto bridge/setup steps
+- still keeps the full legacy final variant core set for `CDKL5`
 
-## Colab-Independent 1KGP
+Use `cached` when you already have a trusted local workbook and want the fastest rerun. Use `palmetto` only when you explicitly need the legacy raw backend for comparison or regeneration.
 
-For users without Palmetto access, the recommended Colab path is to build the `1kgp` workbook directly from public Ensembl APIs.
+## Public VCF-Backed 1KGP
 
-This path is different from the raw Palmetto backend:
+The recommended public backend is:
 
-- it does not require the Palmetto bridge
-- it does not require `bcftools`, `samtools`, or a local `VEP` cache
-- it does not require downloading a full human offline `VEP` cache into Colab
-- it produces the same practical TGVR-style `1kgp` workbook shape for `CDKL5`
-
-What it does instead:
-
-- looks up `CDKL5` from Ensembl
-- queries Ensembl overlap for `1kg_3` variants in the gene region
-- annotates missense `rs` ids through Ensembl `VEP`
-- writes a workbook with the same useful sheets used by the cached TGVR path
-
-Minimal Colab setup:
-
-```python
-import sys
-import subprocess
-from pathlib import Path
-
-subprocess.run([sys.executable, "-m", "pip", "install", "-U", "pip"], check=True)
-subprocess.run([sys.executable, "-m", "pip", "install", "pandas", "openpyxl", "requests"], check=True)
-
-Path("/content/out").mkdir(parents=True, exist_ok=True)
-print("Colab setup ready. Output dir: /content/out")
+```bash
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode vcf
 ```
 
-Practical recommendation:
+This mode:
 
-- if you only need a usable `CDKL5` `1kgp` workbook in Colab, use the Colab-independent API-backed path
-- if you need the heavier legacy-style `VCF -> VEP -> parsed table` reproduction, use Palmetto
-- if you already trust the cached workbook, keep using `--1kgp-mode cached`
+- downloads or reuses the public `phase3` chrX crossmap VCF
+- stores that source under `workflow/tgvr/outputs/<gene>/01_variant_curation/1kgp/source/`
+- subsets the `CDKL5` region locally with `bcftools`
+- annotates the region through Ensembl
+- writes the standard TGVR `1kgp` stage outputs into `workflow/tgvr/outputs/<gene>/01_variant_curation/1kgp/`
+
+Current verified local VCF-backed counts for `CDKL5` are:
+
+- `4480` raw rows
+- `22` missense rows
+- `22` gene-only missense rows
+- `21` unique missense rows
+- `21` protein-change rows
+
+Current comparison table:
+
+| Route | Raw rows | Missense rows | Gene-only missense | Unique missense | Protein-change rows |
+|---|---:|---:|---:|---:|---:|
+| Legacy workbook | 4480 | 19 | 13 | 12 | 12 |
+| Cached / fetched Palmetto workbook | 4480 | 19 | 13 | 12 | 12 |
+| Public VCF-backed rebuild | 4480 | 22 | 22 | 21 | 21 |
+
+Important comparison against the legacy workbook:
+
+- all `12` legacy protein-change variants are present in the VCF-backed output
+- the current VCF-backed run also includes `9` additional protein changes from the public source + current annotation path
 
 ## Raw Palmetto-Backed 1KGP
 
 The raw `1kgp` path is different.
 
-This path is for the heavier `VCF -> VEP -> parsed table` style workflow and is currently implemented as a Palmetto-backed flow for `CDKL5`.
+This path is for the heavier `VCF -> VEP -> parsed table` style workflow and is still available as a Palmetto-backed mode for `CDKL5`, but it is now considered an optional legacy/advanced path rather than the main documented route.
 
-Important rule:
-
-- before using the Palmetto-backed raw `1kgp` flow, establish the Palmetto bridge
+Before using the Palmetto-backed raw `1kgp` flow, establish the Palmetto bridge first.
 
 ## Palmetto Bridge
 
@@ -99,32 +109,18 @@ ssh -S ~/.ssh/palmetto.sock -O check $USER@slogin.palmetto.clemson.edu
 ssh -S ~/.ssh/palmetto.sock $USER@slogin.palmetto.clemson.edu "hostname && whoami"
 ```
 
-If this bridge is not active, the Palmetto-backed `1kgp` manager commands should not be expected to work.
-
-## Public Palmetto Manager
-
-TGVR exposes one public manager for this flow:
-
-- [manage_1kgp_palmetto.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/manage_1kgp_palmetto.py)
-
-Available actions:
-
-- `setup`
-- `submit`
-- `status`
-- `log`
-- `fetch`
+If this bridge is not active, the Palmetto-backed `1kgp` commands should not be expected to work.
 
 ## Full Palmetto Sequence
 
-After the bridge is active, use this sequence:
+After the bridge is active, use this sequence through the same main script:
 
 ```bash
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 setup
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 submit
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 status
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 log
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 fetch
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action setup
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action submit
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action status
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action log
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action fetch
 ```
 
 What these steps do:
@@ -175,13 +171,13 @@ The completed remote run produced:
 After `fetch`, the local TGVR paths were:
 
 - local fetched run dir:
-  `workflow/tgvr/00_data/cdkl5/01_variant_curation/1kgp/palmetto_runs/grch38_allvar_noid_20260329_132508`
+  `workflow/tgvr/outputs/cdkl5/01_variant_curation/1kgp/palmetto_runs/grch38_allvar_noid_20260329_234509`
 - rebuilt cached workbook:
-  `workflow/tgvr/00_data/cdkl5/01_variant_curation/1kgp/1kgp_cdkl5_grch38.xlsx`
+  `workflow/tgvr/outputs/cdkl5/01_variant_curation/1kgp/cache/1kgp_cdkl5_grch38.xlsx`
 
 ## Current Verified CDKL5 Counts
 
-The memory file records the current verified `CDKL5` counts for the rebuilt cached workbook as:
+The current verified legacy-style cached counts for the rebuilt workbook are:
 
 - `4480` raw rows
 - `19` missense rows
@@ -189,33 +185,22 @@ The memory file records the current verified `CDKL5` counts for the rebuilt cach
 - `12` unique rows
 - `12` protein-change rows
 
-The latest verified staged rerun after the fetch also produced:
-
-- final manual-inclusive master total: `162`
-- final kinase-domain total for `1-302`: `114`
-
-Current verified final full-length label counts:
-
-- `Benign` 22
-- `Benign/Likely benign` 15
-- `Conflicting classifications of pathogenicity` 7
-- `Likely benign` 10
-- `Likely pathogenic` 26
-- `Pathogenic` 10
-- `Pathogenic/Likely pathogenic` 24
-- `Uncertain significance` 48
-
 ## Practical Recommendation
 
 Use this decision rule:
 
-- if you just want to run TGVR locally, use `--1kgp-mode cached`
-- if you need a Colab-safe `1kgp` path without Palmetto, use the Colab-independent API-backed workbook build
-- if you need to regenerate the heavy raw `1kgp` source path, bridge Palmetto first and use `manage_1kgp_palmetto.py`
+- if you want the main public TGVR workflow, use `--1kgp-mode vcf`
+- if you already trust the local workbook and want the fastest rerun, use `--1kgp-mode cached`
+- if you need to regenerate the heavy raw `1kgp` source path for legacy comparison, bridge Palmetto first and use `--1kgp-mode palmetto`
+
+Current storage rule:
+
+- keep stable workflow inputs in `workflow/tgvr/00_data/`
+- keep generated `1kgp` caches, fetched Palmetto runs, and source VCF downloads in `workflow/tgvr/outputs/<gene>/01_variant_curation/1kgp/`
 
 ## Canonical End-To-End Command Block
 
-To avoid ambiguity later, keep the following exact block as the canonical begin-to-finish `CDKL5` variant-curation sequence:
+To avoid ambiguity later, keep the following exact block as the canonical begin-to-finish Palmetto-backed `CDKL5` `1kgp` regeneration sequence:
 
 ```bash
 cd ~/cdkl5-variants
@@ -226,11 +211,11 @@ ssh -M -S ~/.ssh/palmetto.sock -o ControlPersist=6h -fN $USER@slogin.palmetto.cl
 ssh -S ~/.ssh/palmetto.sock -O check $USER@slogin.palmetto.clemson.edu
 ssh -S ~/.ssh/palmetto.sock $USER@slogin.palmetto.clemson.edu "hostname && whoami"
 
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 setup
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 submit
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 status
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 log
-python workflow/tgvr/scripts/manage_1kgp_palmetto.py CDKL5 fetch
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action setup
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action submit
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action status
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action log
+python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode palmetto --1kgp-palmetto-action fetch
 
 python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage clinvar
 python workflow/tgvr/scripts/run_variant_curation.py CDKL5 O76039 --stage 1kgp --1kgp-mode cached

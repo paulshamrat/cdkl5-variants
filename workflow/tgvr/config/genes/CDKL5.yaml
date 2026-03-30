@@ -12,7 +12,8 @@ reference:
   reported_gene_name: CDKL5
   uniprot_entry: CDKL5_HUMAN
 transcripts:
-  preferred: []
+  preferred:
+    - ENST00000379989.6
 features:
   primary_domain:
     label: Kinase domain

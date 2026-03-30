@@ -80,21 +80,52 @@ Important:
 
 TGVR currently supports:
 
-- `auto`
 - `cached`
-- `live`
+- `vcf`
+- `palmetto`
 
-`auto` is the default and prefers the cached workbook backend when available.
+Mode summary:
 
-For `CDKL5`, this cached path is the preferred stable local route.
+- `cached`: reuse the local cached 1KGP workbook already stored under `workflow/tgvr/outputs/<gene>/01_variant_curation/1kgp/cache/`
+- `vcf`: rebuild 1KGP from the public `phase3` chrX crossmap VCF without Palmetto; this is the main recommended public route
+- `palmetto`: run the heavier legacy-style raw 1KGP reproduction path through Palmetto, then fetch and cache the rebuilt workbook locally
 
-The heavier raw `1kgp` reproduction path is currently Palmetto-backed and exposed through:
+Current `CDKL5` comparison:
 
-- [manage_1kgp_palmetto.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/manage_1kgp_palmetto.py)
+- `cached` and `palmetto` reproduce the legacy 1KGP benchmark exactly at the 1KGP stage: `4480 / 19 / 13 / 12 / 12`
+- `vcf` is Palmetto-free and keeps the full legacy final variant core set, but currently expands the 1KGP-derived portion of the final table
+- final full-length totals are:
+  - legacy: `156`
+  - cached/palmetto-backed current workflow: `162`
+  - public VCF-backed current workflow: `163`
+
+Comparison table:
+
+| Route | 1KGP raw | 1KGP missense | 1KGP gene-only | 1KGP unique | 1KGP prot | Final total | Shared vs legacy final | Extra vs legacy final | Missing vs legacy final | Kinase total |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Legacy | 4480 | 19 | 13 | 12 | 12 | 156 | 156 | 0 | 0 | 112 |
+| Cached/Palmetto | 4480 | 19 | 13 | 12 | 12 | 162 | 156 | 6 | 0 | 114 |
+| Public VCF | 4480 | 22 | 22 | 21 | 21 | 163 | 156 | 7 | 0 | 114 |
+
+Full-length germline classification comparison:
+
+| Germline classification | Legacy | Cached/Palmetto | Public VCF |
+|---|---:|---:|---:|
+| Benign | 20 | 22 | 23 |
+| Benign/Likely benign | 15 | 15 | 15 |
+| Conflicting classifications of pathogenicity | 13 | 7 | 7 |
+| Likely benign | 10 | 10 | 10 |
+| Likely pathogenic | 22 | 26 | 26 |
+| Pathogenic | 9 | 10 | 10 |
+| Pathogenic/Likely pathogenic | 24 | 24 | 24 |
+| Uncertain significance | 43 | 48 | 48 |
+| Total final variants | 156 | 162 | 163 |
 
 Important:
 
-- the Palmetto-backed raw `1kgp` path requires the Palmetto bridge first
+- prefer `vcf` for the main public workflow and for most local reruns
+- the `palmetto` route requires the Palmetto bridge first
+- all three routes are accessed through [run_variant_curation.py](/home/paul/cdkl5-variants/workflow/tgvr/scripts/run_variant_curation.py)
 - see the dedicated `1KGP` page for the exact bridge block and the full `setup -> submit -> status -> log -> fetch` flow
 
 Detailed guide:
